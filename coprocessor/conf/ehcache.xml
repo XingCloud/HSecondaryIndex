@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ehcache name="EventCache">
+    <cache name="blocking_cache"
+           maxBytesLocalHeap="128M"
+           diskSpoolBufferSizeMB="30"
+           eternal="false"
+           timeToIdleSeconds="900"
+           timeToLiveSeconds="900">
+        <persistence strategy="localTempSwap"/>
+    </cache>
+</ehcache>

@@ -10,12 +10,17 @@ import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.coprocessor.BaseRegionObserver;
 import org.apache.hadoop.hbase.coprocessor.ObserverContext;
 import org.apache.hadoop.hbase.coprocessor.RegionCoprocessorEnvironment;
+import org.apache.hadoop.hbase.regionserver.HRegionServerRegister;
 import org.apache.hadoop.hbase.regionserver.wal.WALEdit;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.map.ObjectMapper;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -26,6 +31,7 @@ import java.util.concurrent.BlockingQueue;
  */
 public class SecondaryIndexCoprocessor extends BaseRegionObserver {
     private HTablePool pool;
+    private ObjectMapper mapper;
 
     private static Log LOG = LogFactory.getLog(SecondaryIndexCoprocessor.class);
     private static JedisPool jedisPool = new JedisPool(new JedisPoolConfig(), "localhost");
@@ -38,7 +44,7 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
     @Override
     public void start(CoprocessorEnvironment e){
         blockingCache = CacheManager.getInstance().getCache("blocking_cache");
-
+        mapper = new ObjectMapper();
     }
 
     @Override
@@ -61,12 +67,15 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         long s1 = System.nanoTime();
         HTableInterface dataTable = observerContext.getEnvironment().getTable(table);
         byte[] newValue = put.get(Bytes.toBytes("value"), Bytes.toBytes("value")).get(0).getValue();
-        byte[] oldValue = getValue(dataTable, tableName, put.getRow());
+        byte[] oldValue = getValue(observerContext.getEnvironment().getRegion().getRegionName(), dataTable, tableName, put.getRow());
+
+        long s2 = System.nanoTime();
         if(oldValue == null){
             submitIndexJob(projectID, false, put.getRow(), propertyID, null, newValue);
         } else if(!Bytes.equals(oldValue, newValue)){
             submitIndexJob(projectID, true, put.getRow(), propertyID, oldValue, newValue);
         }
+        long s3 = System.nanoTime();
         /*
         HTableInterface indexTable = observerContext.getEnvironment().getTable(Bytes.toBytes(projectID + "_index"));
         if(oldValue != null){
@@ -93,6 +102,8 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
             blockingCache.put(new Element(tableName + Bytes.toString(put.getRow()), Bytes.toString(newValue)));
         }
 
+        //LOG.info("stage1: " + (s2 - s1) + ", stage2: " + (s3 - s2));
+
     }
 
     private byte[] combineIndexRowKey(int propertyID, byte[] value){
@@ -115,14 +126,15 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         return combinedBytes;
     }
 
-    private byte[] getValue(HTableInterface table, String tableName, byte[] uid) throws IOException {
+    private byte[] getValue(byte[] regionName, HTableInterface table, String tableName, byte[] uid) throws IOException {
         String key = tableName + Bytes.toString(uid);
         Element element = blockingCache.get(key);
         if (element != null) {
             return Bytes.toBytes((String) element.getObjectValue());
         } else {
             Get get = new Get(uid);
-            Result result = table.get(get);
+            //Result result = table.get(get);
+            Result result = HRegionServerRegister.getLast().get(regionName, get);
             if(result.isEmpty()){
                 return null;
             } else {
@@ -134,17 +146,18 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
     }
 
     private void submitIndexJob(String projectID, boolean shouldDel, byte[] uid,
-                                int propertyID, byte[] oldValue, byte[] newValue){
+                                int propertyID, byte[] oldValue, byte[] newValue) throws IOException {
         byte[] convertedUid = {0,0,0,0,0,0,0,0};
         for(int i = 0; i < 5; i++)
             convertedUid[i+3] = uid[i];
-        String job;
-        job = "{\"uid\": " + Bytes.toLong(convertedUid) +
-                ", \"propertyID\": " + propertyID +
-                ", \"old_value\": \"" + Bytes.toString(oldValue) +
-                "\", \"new_value\": \"" + Bytes.toString(newValue) +
-                "\", \"delete\": " + shouldDel + ", \"pid\": \"" + projectID + "\"}";
-        redisJobs.add(job);
+        Map<String, Object> jobMap = new HashMap<String, Object>();
+        jobMap.put("uid", Bytes.toLong(convertedUid));
+        jobMap.put("propertyID", propertyID);
+        jobMap.put("old_value", Bytes.toStringBinary(oldValue));
+        jobMap.put("new_value", Bytes.toStringBinary(newValue));
+        jobMap.put("delete", shouldDel);
+        jobMap.put("pid", projectID);
+        LOG.info(mapper.writeValueAsString(jobMap));
     }
 
 }

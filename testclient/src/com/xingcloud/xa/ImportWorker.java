@@ -1,5 +1,7 @@
 package com.xingcloud.xa;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.ZooKeeperConnectionException;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
@@ -22,6 +24,8 @@ public class ImportWorker implements Runnable {
     private ImportJob job;
     private HBaseAdmin admin;
 
+    private static Log LOG = LogFactory.getLog(ImportWorker.class);
+
     public ImportWorker(ImportWorkerInfo workerInfo, ImportJob job) throws MasterNotRunningException, ZooKeeperConnectionException {
         this.workerInfo = workerInfo;
         this.job = job;
@@ -30,7 +34,6 @@ public class ImportWorker implements Runnable {
 
     @Override
     public void run() {
-        long start = System.currentTimeMillis();
         List<Put> dataPuts = new ArrayList<Put>();
         for(Long uid: workerInfo.getData().keySet()){
             String value = workerInfo.getData().get(uid).toString();
@@ -50,7 +53,7 @@ public class ImportWorker implements Runnable {
         } catch (IOException e){
             e.printStackTrace();
         } finally {
-            job.addDuration(start, System.currentTimeMillis());
+            LOG.info("finished: #" + job.finishedCount.addAndGet(dataPuts.size()) + ", total: " + job.totalCount);
         }
     }
 }

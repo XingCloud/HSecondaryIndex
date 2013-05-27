@@ -9,6 +9,7 @@ import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.ZooKeeperConnectionException;
 import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding;
 import org.apache.hadoop.hbase.io.hfile.Compression;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -19,6 +20,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * User: Jian Fang
@@ -34,8 +36,8 @@ public class ImportJob {
     private int maxPropertyID = -1;
     private ObjectMapper objectMapper;
     private ExecutorService executor;
-    private long workerStartTS;
-    private long workerEndTS;
+    public AtomicInteger finishedCount;
+    public int totalCount;
     private static Log LOG = LogFactory.getLog(ImportJob.class);
 
     public ImportJob(Configuration config) throws MasterNotRunningException, ZooKeeperConnectionException {
@@ -44,24 +46,26 @@ public class ImportJob {
         this.tables = new ConcurrentHashMap<String, Boolean>();
         this.properties = new HashMap<String, Integer>();
         this.objectMapper = new ObjectMapper();
-        this.executor = Executors.newFixedThreadPool(8);
-        this.workerStartTS = Long.MAX_VALUE;
-        this.workerEndTS = 0;
+        this.executor = Executors.newFixedThreadPool(32);
+        this.finishedCount = new AtomicInteger(0);
+        this.totalCount = 0;
     }
 
     public void batchStart(String[] files) throws IOException, InterruptedException {
         initTables();
         initProperties();
-        long start = System.currentTimeMillis();
+        long start = System.nanoTime();
         for (String file: files){
+            finishedCount.set(0);
+            totalCount = 0;
             start(file);
         }
         executor.shutdown();
         while(!executor.isTerminated()){
             Thread.sleep(100);
         }
-        long end = System.currentTimeMillis();
-        LOG.info("duration: " + (end - start) + "ms, thread time: " + (workerEndTS - workerStartTS) + "ms");
+        long end = System.nanoTime();
+        LOG.info("duration: " + ((end - start) / 1000000) + "ms");
     }
 
     public void start(String filePath) throws IOException, InterruptedException {
@@ -70,20 +74,21 @@ public class ImportJob {
         String line = reader.readLine();
         int count = 0;
         Map<String, ImportWorkerInfo> workerInfos = new HashMap<String, ImportWorkerInfo>();
-        long start = System.currentTimeMillis();
         while(line != null){
             String[] words = line.split("\t");
+            if(words.length != 3){
+                line = reader.readLine();
+                continue;
+            }
             processLine(workerInfos, words[0], UidMappingUtil.getInstance().decorateWithMD5(Long.parseLong(words[1])), words[2]);
             line = reader.readLine();
             count++;
-            if(count % 10000 == 0 || line == null){
+            if(count % 100000 == 0 || line == null){
                 for(String tableName: workerInfos.keySet()){
                     ImportWorker worker = new ImportWorker(workerInfos.get(tableName), this);
                     executor.execute(worker);
                 }
                 workerInfos.clear();
-                LOG.info("finished #" + count + ", use " + (System.currentTimeMillis() - start) + "ms");
-                start = System.currentTimeMillis();
             }
         }
         reader.close();
@@ -101,13 +106,6 @@ public class ImportJob {
         return config;
     }
 
-    synchronized public void addDuration(long startTS, long endTS) {
-        if(workerStartTS > startTS)
-            workerStartTS = startTS;
-        if(workerEndTS < endTS)
-            workerEndTS = endTS;
-    }
-
     private void processLine(Map<String, ImportWorkerInfo> workerInfos, String pid, long uid, String data) throws IOException {
         Map<String, Object> parsedData = objectMapper.readValue(data, Map.class);
         for(String property: parsedData.keySet()){
@@ -120,6 +118,7 @@ public class ImportJob {
                 workerInfos.put(pid + "_" + propertyID, info);
             }
             info.getData().put(uid, parsedData.get(property));
+            totalCount += 1;
         }
 
     }

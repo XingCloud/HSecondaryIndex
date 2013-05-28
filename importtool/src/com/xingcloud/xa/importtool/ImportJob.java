@@ -50,6 +50,7 @@ public class ImportJob {
         for(String pid: pids){
             start(baseDir, pid);
         }
+        executor.shutdown();
         while(!executor.isTerminated()){
             Thread.sleep(100);
         }

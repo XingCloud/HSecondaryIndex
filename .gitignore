@@ -2,5 +2,7 @@ coprocessor/build
 coprocessor/dist
 testclient/build
 testclient/dist
+importtool/build
+importtool/dist
 */.idea
 *.iml

@@ -19,8 +19,6 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -159,8 +157,6 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         jobMap.put("new_value", Bytes.toStringBinary(newValue));
         jobMap.put("delete", shouldDel);
         jobMap.put("pid", projectID);
-        SimpleDateFormat df2 = new SimpleDateFormat("yyyyMMdd");
-        jobMap.put("timestamp", df2.format(new Date()));
         LOG.info(mapper.writeValueAsString(jobMap));
     }
 

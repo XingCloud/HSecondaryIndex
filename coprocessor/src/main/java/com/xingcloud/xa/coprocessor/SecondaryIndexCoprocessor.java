@@ -14,8 +14,6 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,8 +91,6 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         jobMap.put("new_value", Bytes.toStringBinary(newValue));
         jobMap.put("delete", shouldDel);
         jobMap.put("pid", projectID);
-        SimpleDateFormat df2 = new SimpleDateFormat("yyyyMMdd");
-        jobMap.put("timestamp", df2.format(new Date()));
         LOG.info(mapper.writeValueAsString(jobMap));
     }
 

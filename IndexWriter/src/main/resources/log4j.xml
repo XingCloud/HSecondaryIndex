@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE log4j:configuration PUBLIC "-//APACHE//DTD LOG4J 1.2//EN" "log4j.dtd">
+
+<log4j:configuration>
+    <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{yyyyMMddHHmmss} %-5p[%t] %c{2}: %m%n" />
+        </layout>
+    </appender>
+
+    <appender name="WRITER" class="org.apache.log4j.DailyRollingFileAppender">
+        <param name="File" value="/data/log/secondaryindexlog/writer.log" />
+        <param name="Append" value="true" />
+        <param name="Threshold" value="info" />
+        <param name="DatePattern" value="'.'yyyy-MM-dd" />
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{yyyyMMddHHmmss} %-5p[%t] %c{2}: 
+        %m%n" />
+        </layout>
+    </appender>
+
+    <logger name="com.xingcloud.xa.secondaryindex">
+        <level value="info" />
+        <appender-ref ref="WRITER" />
+    </logger>
+
+    <root>
+        <priority value="info" />
+        <appender-ref ref="CONSOLE" />
+    </root>
+
+
+</log4j:configuration>

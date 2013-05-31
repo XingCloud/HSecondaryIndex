@@ -1,6 +1,5 @@
 package com.xingcloud.xa.coprocessor;
 
-import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.ipc.CoprocessorProtocol;
 
 /**

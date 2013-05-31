@@ -9,6 +9,13 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.xingcloud.xa</groupId>
+            <artifactId>Client</artifactId>
+            <version>1.0</version>
+        </dependency>
+    </dependencies>
     <artifactId>Coprocessor</artifactId>
     
 </project>

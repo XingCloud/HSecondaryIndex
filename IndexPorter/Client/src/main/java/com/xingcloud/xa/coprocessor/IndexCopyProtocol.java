@@ -1,5 +1,6 @@
 package com.xingcloud.xa.coprocessor;
 
+import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.ipc.CoprocessorProtocol;
 
 /**
@@ -10,5 +11,5 @@ import org.apache.hadoop.hbase.ipc.CoprocessorProtocol;
  * To change this template use File | Settings | File Templates.
  */
 public interface IndexCopyProtocol  extends CoprocessorProtocol{
-     public int copyIndex(byte[] startKey,byte[] stopKey ,String tableName) ;
+     public int copyIndex(byte[] startKey,byte[] stopKey ,String tableName,String property) ;
 }

@@ -30,7 +30,6 @@ public class CopyWorker implements Runnable {
     private Map<String, Integer> properties;
     private ExecutorService executor;
     private AtomicInteger totalCount;
-    private AtomicInteger finishedCount;
     private byte[] today;
     private byte[] yesterday;
 
@@ -43,7 +42,6 @@ public class CopyWorker implements Runnable {
         this.config = config;
         this.executor = Executors.newFixedThreadPool(4);
         this.totalCount = new AtomicInteger(0);
-        this.finishedCount = new AtomicInteger(0);
         today = Bytes.toBytes(DateUtil.getTodayDateStr());
         yesterday = Bytes.toBytes(DateUtil.getYesterdayDateStr());
     }
@@ -65,7 +63,7 @@ public class CopyWorker implements Runnable {
             }
         }
         long timeCost = System.currentTimeMillis() - start;
-        LOG.info("Copy finished , index table : " + tableName + ",cost " + timeCost / 1000 + "seconds .");
+        LOG.info("Copy finished ,table : `" + tableName + "`, totalCount " + totalCount + ",cost " + timeCost / 1000 + "seconds .");
     }
 
     class CoprocessorWorker implements Runnable {
@@ -88,10 +86,15 @@ public class CopyWorker implements Runnable {
                 Map<byte[], Integer> result = hTable.coprocessorExec(IndexCopyProtocol.class, startRow, stopRow, new Batch.Call<IndexCopyProtocol, Integer>() {
                     @Override
                     public Integer call(IndexCopyProtocol indexCopyProtocol) throws IOException {
-                        return indexCopyProtocol.copyIndex(startRow, stopRow, tableName);
+                        return indexCopyProtocol.copyIndex(startRow, stopRow, tableName,property);
                     }
                 });
-                LOG.info("Copy property `" + property + "` in table `" + tableName + "` finish");
+                int count = 0 ;
+                for(int value : result.values()){
+                    count += value ;
+                }
+                totalCount.addAndGet(count);
+                LOG.info("Copy property `" + property + "` in table `" + tableName + "` finish, count : " + count);
             } catch (Throwable throwable) {
                 throwable.printStackTrace();
             }

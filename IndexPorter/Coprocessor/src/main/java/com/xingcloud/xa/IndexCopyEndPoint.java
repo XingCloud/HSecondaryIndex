@@ -69,7 +69,7 @@ public class IndexCopyEndPoint extends BaseEndpointCoprocessor implements IndexC
                 BytesUtil.replaceBytes(today, 0, rowKey, 2, today.length);
                 Put put = new Put(rowKey);
                 for ( KeyValue keyValue : results) {
-                    put.add(keyValue.getFamily(), keyValue.getQualifier(), keyValue.getValue());
+                    put.add(keyValue);
                     kvNums ++ ;
                 }
                 dataPuts.add(put);
@@ -113,13 +113,13 @@ public class IndexCopyEndPoint extends BaseEndpointCoprocessor implements IndexC
         public void run() {
             try {
                 HTable htable = new HTable(config, tableName);
-                htable.put(dataPuts);
+                htable.batch(dataPuts);
                 htable.close();
                 int countTotal = totalCount.get();
                 int countFinished = finishedCount.addAndGet(dataPuts.size());
                 LOG.info(countFinished + "/" + countTotal + " ,`" + regionName + "`.`" + tableName + "`.`" + property + "`");
 
-            } catch (IOException e) {
+            } catch (Exception e) {
                 LOG.error(e.getMessage());
             }
 

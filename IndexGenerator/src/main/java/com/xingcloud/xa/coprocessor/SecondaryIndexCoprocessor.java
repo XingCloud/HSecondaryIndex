@@ -3,6 +3,7 @@ package com.xingcloud.xa.coprocessor;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.CoprocessorEnvironment;
+import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.coprocessor.BaseRegionObserver;
@@ -27,6 +28,8 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
     private HTablePool pool;
     private ObjectMapper mapper;
 
+    private Map<String, Map<String, Integer>> properties = new HashMap<String, Map<String, Integer>>();
+  
     private static Log LOG = LogFactory.getLog(SecondaryIndexCoprocessor.class);
 
     @Override
@@ -47,16 +50,18 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         if(!tableName.startsWith("property_") || tableName.endsWith("_index")){
             return;
         }
-        int index = tableName.lastIndexOf("_");
-        String projectID = tableName.substring(0, index);
-        int propertyID = Integer.parseInt(tableName.substring(index + 1));
+        int index = tableName.indexOf("_");
+        String property = Bytes.toString(put.getFamilyMap().get(Bytes.toBytes("value")).get(0).getKey());
+        
+        String projectID = tableName.substring(index+1);//sof-dsk
+        int propertyID = getPropertyID(projectID, property);
 
         long s1 = System.nanoTime();
         HTableInterface dataTable = observerContext.getEnvironment().getTable(table);
-        List<KeyValue> values = put.get(Bytes.toBytes("value"), Bytes.toBytes("value"));
+        List<KeyValue> values = put.get(Bytes.toBytes("value"), Bytes.toBytes(property));
         byte[] newValue = {};
         if(values.size() > 0) newValue = values.get(0).getValue();
-        byte[] oldValue = getValue(observerContext.getEnvironment().getRegion().getRegionName(), dataTable, put.getRow());
+        byte[] oldValue = getValue(observerContext.getEnvironment().getRegion().getRegionName(), property, put.getRow());
 
         long s2 = System.nanoTime();
         if(oldValue == null){
@@ -68,14 +73,36 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         dataTable.close();
     }
 
-    private byte[] getValue(byte[] regionName, HTableInterface table, byte[] uid) throws IOException {
+  private int getPropertyID(String projectID, String property) {
+    if(! properties.containsKey(projectID) || !properties.get(projectID).containsKey(property)){
+      Map<String, Integer> projectProperties = new HashMap<String, Integer>();
+      properties.put(projectID, projectProperties);
+      Scan scan = new Scan();
+      HTable propertyTable = null;
+      try {
+        propertyTable = new HTable(HBaseConfiguration.create(), "properties");
+        ResultScanner scanner = propertyTable.getScanner(scan);
+        for(Result row = scanner.next(); row != null; row = scanner.next()){
+          String prop = Bytes.toString(row.getRow());
+          int id = Bytes.toInt(row.getValue(Bytes.toBytes("id"), Bytes.toBytes("id")));
+          projectProperties.put(prop, id);
+        }
+        scanner.close();
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
+    
+    return properties.get(projectID).get(property);
+  }
+
+  private byte[] getValue(byte[] regionName, String property, byte[] uid) throws IOException {
         Get get = new Get(uid);
         Result result = HRegionServerRegister.getLast().get(regionName, get);
-        //Result result = table.get(get);
         if(result.isEmpty()){
             return null;
         } else {
-            return result.getValue(Bytes.toBytes("value"), Bytes.toBytes("value"));
+            return result.getValue(Bytes.toBytes("value"), Bytes.toBytes(property));
         }
     }
 

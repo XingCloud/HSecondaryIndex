@@ -21,17 +21,15 @@ public class ImportWorker implements Runnable  {
     private Configuration config;
     private String pid;
     private String property;
-    private int propertyID;
     private File logFile;
 
     private static Log LOG = LogFactory.getLog(ImportWorker.class);
 
-    public ImportWorker(Configuration config, String pid, String property, int propertyID, File logFile){
+    public ImportWorker(Configuration config, String pid, String property, int propertyID, String propertyType, File logFile){
         this.config = config;
         this.pid = pid;
         this.property = property;
-        this.propertyID = propertyID;
-        this.logFile = logFile;
+      this.logFile = logFile;
     }
 
     @Override
@@ -39,7 +37,7 @@ public class ImportWorker implements Runnable  {
         long start = System.nanoTime();
         long count = 0;
         try {
-            HTable table = new HTable(config, "property_" + pid + "_" + propertyID);
+            HTable table = new HTable(config, "property_" + pid);
             List<Put> puts = new ArrayList<Put>();
             InputStreamReader inputStream = new InputStreamReader(new FileInputStream(logFile));
             BufferedReader reader = new BufferedReader(inputStream);
@@ -55,10 +53,10 @@ public class ImportWorker implements Runnable  {
                 byte[] uidBytes = Bytes.toBytes(uid);
                 byte[] shortenUid = {uidBytes[3],uidBytes[4], uidBytes[5], uidBytes[6], uidBytes[7]};
                 Put dataPut = new Put(shortenUid);
-                if(property.endsWith("_time")){
-                    dataPut.add(Bytes.toBytes("value"), Bytes.toBytes("value"), Bytes.toBytes(Long.parseLong(value)));
+                if(property.endsWith("_time")){//todo wcl
+                    dataPut.add(Bytes.toBytes("value"), Bytes.toBytes(property), Bytes.toBytes(Long.parseLong(value)));
                 } else {
-                    dataPut.add(Bytes.toBytes("value"), Bytes.toBytes("value"), Bytes.toBytes(value));
+                    dataPut.add(Bytes.toBytes("value"), Bytes.toBytes(property), Bytes.toBytes(value));
                 }
                 puts.add(dataPut);
                 line = reader.readLine();

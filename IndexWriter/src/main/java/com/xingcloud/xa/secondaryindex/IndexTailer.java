@@ -75,7 +75,7 @@ public class IndexTailer extends Tail implements Runnable{
     ObjectMapper mapper = new ObjectMapper();
     for(String log: logs){
       Map<String,Object> data = mapper.readValue(log.getBytes(), Map.class);
-      String projectID = (String)data.get("pid");
+      String tableName = "property_"+(String)data.get("pid")+"_index";
       long uid = Long.valueOf(String.valueOf(data.get("uid")));
       int propertyID = Integer.valueOf(String.valueOf(data.get("propertyID")));
       String oldValue = (String)data.get("old_value");
@@ -83,26 +83,26 @@ public class IndexTailer extends Tail implements Runnable{
       String timestamp = (String)data.get("timestamp");
       Boolean needDelete = (Boolean)data.get("delete");
       
-      Index put = new Index(projectID, uid, propertyID, newValue, "put", timestamp);   
+      Index put = new Index(tableName, uid, propertyID, newValue, "put", timestamp);   
       Index delete = null;
       
       if (needDelete){
-        delete = new Index(projectID, uid, propertyID, oldValue, "delete", timestamp);    
+        delete = new Index(tableName, uid, propertyID, oldValue, "delete", timestamp);    
       }
 
       //String hbaseAddress = UidMappingUtil.getInstance().ha sh(Long.valueOf(uid));
       String hbaseAddress = "HBASE";//todo wcl
       
-      if(! putsMap.containsKey(projectID)){
-        putsMap.put(projectID, new HashMap<String, List<Index>>());
+      if(! putsMap.containsKey(tableName)){
+        putsMap.put(tableName, new HashMap<String, List<Index>>());
       }
       
-      if(! putsMap.get(projectID).containsKey(hbaseAddress)){
-        putsMap.get(projectID).put(hbaseAddress, new ArrayList<Index>());   
+      if(! putsMap.get(tableName).containsKey(hbaseAddress)){
+        putsMap.get(tableName).put(hbaseAddress, new ArrayList<Index>());   
       }
       
-      if (delete != null ) putsMap.get(projectID).get(hbaseAddress).add(delete);
-      putsMap.get(projectID).get(hbaseAddress).add(put);
+      if (delete != null ) putsMap.get(tableName).get(hbaseAddress).add(delete);
+      putsMap.get(tableName).get(hbaseAddress).add(put);
       
     }  
     return putsMap;

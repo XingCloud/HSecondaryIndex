@@ -21,6 +21,8 @@ public class ImportWorker implements Runnable  {
     private Configuration config;
     private String pid;
     private String property;
+    private int propertyID;
+    private String propertyType;
     private File logFile;
 
     private static Log LOG = LogFactory.getLog(ImportWorker.class);
@@ -29,6 +31,8 @@ public class ImportWorker implements Runnable  {
         this.config = config;
         this.pid = pid;
         this.property = property;
+      this.propertyID = propertyID;
+      this.propertyType = propertyType;
       this.logFile = logFile;
     }
 
@@ -37,7 +41,7 @@ public class ImportWorker implements Runnable  {
         long start = System.nanoTime();
         long count = 0;
         try {
-            HTable table = new HTable(config, "property_" + pid);
+            HTable table = new HTable(config, "property_" + pid+"_"+propertyID);
             List<Put> puts = new ArrayList<Put>();
             InputStreamReader inputStream = new InputStreamReader(new FileInputStream(logFile));
             BufferedReader reader = new BufferedReader(inputStream);
@@ -48,15 +52,15 @@ public class ImportWorker implements Runnable  {
                     line = reader.readLine();
                     continue;
                 }
-                long uid = UidMappingUtil.getInstance().decorateWithMD5(Long.parseLong(words[0]));
+                long uid = Long.parseLong(words[0]);
                 String value = words[1];
                 byte[] uidBytes = Bytes.toBytes(uid);
                 byte[] shortenUid = {uidBytes[3],uidBytes[4], uidBytes[5], uidBytes[6], uidBytes[7]};
                 Put dataPut = new Put(shortenUid);
-                if(property.endsWith("_time")){//todo wcl
-                    dataPut.add(Bytes.toBytes("value"), Bytes.toBytes(property), Bytes.toBytes(Long.parseLong(value)));
-                } else {
-                    dataPut.add(Bytes.toBytes("value"), Bytes.toBytes(property), Bytes.toBytes(value));
+                if(propertyType.equals("sql_datetime") || propertyType.equals("sql_bigint")){
+                    dataPut.add(Bytes.toBytes("value"), Bytes.toBytes("value"), Bytes.toBytes(Long.parseLong(value)));
+                } else{
+                    dataPut.add(Bytes.toBytes("value"), Bytes.toBytes("value"), Bytes.toBytes(value));
                 }
                 puts.add(dataPut);
                 line = reader.readLine();

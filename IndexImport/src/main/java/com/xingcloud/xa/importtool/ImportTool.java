@@ -20,7 +20,11 @@ public class ImportTool {
             for(int i = 1; i < args.length; i++){
                 pids[i - 1] = args[i];
             }
+          if(args[0].equals("remove")){
+            new ImportJob(config).batchRemove(pids);
+          }else{
             new ImportJob(config).batchStart(baseDir, pids);
+          }
         } catch (IOException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {

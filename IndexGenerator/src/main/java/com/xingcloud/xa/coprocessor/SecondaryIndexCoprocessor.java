@@ -15,6 +15,8 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,18 +52,16 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         if(!tableName.startsWith("property_") || tableName.endsWith("_index")){
             return;
         }
-        int index = tableName.indexOf("_");
-        String property = Bytes.toString(put.getFamilyMap().get(Bytes.toBytes("value")).get(0).getKey());
-        
-        String projectID = tableName.substring(index+1);//sof-dsk
-        int propertyID = getPropertyID(projectID, property);
+        int index = tableName.lastIndexOf("_");
+        String projectID = tableName.substring(tableName.indexOf("_")+1, index);//sof-dsk 
+        int propertyID = Integer.parseInt(tableName.substring(index + 1));
 
         long s1 = System.nanoTime();
         HTableInterface dataTable = observerContext.getEnvironment().getTable(table);
-        List<KeyValue> values = put.get(Bytes.toBytes("value"), Bytes.toBytes(property));
+        List<KeyValue> values = put.get(Bytes.toBytes("value"), Bytes.toBytes("value"));
         byte[] newValue = {};
         if(values.size() > 0) newValue = values.get(0).getValue();
-        byte[] oldValue = getValue(observerContext.getEnvironment().getRegion().getRegionName(), property, put.getRow());
+        byte[] oldValue = getValue(observerContext.getEnvironment().getRegion().getRegionName(), put.getRow());
 
         long s2 = System.nanoTime();
         if(oldValue == null){
@@ -73,36 +73,13 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         dataTable.close();
     }
 
-  private int getPropertyID(String projectID, String property) {
-    if(! properties.containsKey(projectID) || !properties.get(projectID).containsKey(property)){
-      Map<String, Integer> projectProperties = new HashMap<String, Integer>();
-      properties.put(projectID, projectProperties);
-      Scan scan = new Scan();
-      HTable propertyTable = null;
-      try {
-        propertyTable = new HTable(HBaseConfiguration.create(), "properties");
-        ResultScanner scanner = propertyTable.getScanner(scan);
-        for(Result row = scanner.next(); row != null; row = scanner.next()){
-          String prop = Bytes.toString(row.getRow());
-          int id = Bytes.toInt(row.getValue(Bytes.toBytes("id"), Bytes.toBytes("id")));
-          projectProperties.put(prop, id);
-        }
-        scanner.close();
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    }
-    
-    return properties.get(projectID).get(property);
-  }
-
-  private byte[] getValue(byte[] regionName, String property, byte[] uid) throws IOException {
+  private byte[] getValue(byte[] regionName, byte[] uid) throws IOException {
         Get get = new Get(uid);
         Result result = HRegionServerRegister.getLast().get(regionName, get);
         if(result.isEmpty()){
             return null;
         } else {
-            return result.getValue(Bytes.toBytes("value"), Bytes.toBytes(property));
+            return result.getValue(Bytes.toBytes("value"), Bytes.toBytes("value"));
         }
     }
 
@@ -112,6 +89,7 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         for(int i = 0; i < 5; i++)
             convertedUid[i+3] = uid[i];
         Map<String, Object> jobMap = new HashMap<String, Object>();
+        jobMap.put("timestamp", new SimpleDateFormat("yyyyMMdd").format(Calendar.getInstance().getTime()));
         jobMap.put("uid", Bytes.toLong(convertedUid));
         jobMap.put("propertyID", propertyID);
         jobMap.put("old_value", Bytes.toStringBinary(oldValue));

@@ -4,10 +4,7 @@ import com.xingcloud.mysql.MySql_fixseqid;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HColumnDescriptor;
-import org.apache.hadoop.hbase.HTableDescriptor;
-import org.apache.hadoop.hbase.MasterNotRunningException;
-import org.apache.hadoop.hbase.ZooKeeperConnectionException;
+import org.apache.hadoop.hbase.*;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.io.hfile.Compression;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -73,7 +70,7 @@ public class ImportJob {
             String property = name.substring(start, end);
             int propertyID = getPropertyID(property);
             String propertyType = properties.get(property).get("type");
-            checkTable(admin, "property_" + pid, "value");
+            checkTable(admin, "property_" + pid + "_"+ propertyID, "value");
             ImportWorker worker = new ImportWorker(config, pid, property, propertyID, propertyType, file);
             executor.execute(worker);
         }
@@ -92,7 +89,9 @@ public class ImportJob {
             createTable(admin, "properties_"+pid, "value");
             importProperties(pid);
         }
-        propertyTable = new HTable(config, "properties");
+        
+        //get properties from hbase, then cache
+        propertyTable = new HTable(config, "properties_"+pid);
         ResultScanner scanner = propertyTable.getScanner(scan);
         for(Result row = scanner.next(); row != null; row = scanner.next()){
             String property = Bytes.toString(row.getRow());
@@ -108,12 +107,13 @@ public class ImportJob {
     }
 
   private void importProperties(String pid) {
-    Connection conn;
+    Connection conn = null;
     ResultSet rs;
+    Statement statement = null;
     List<Put> puts = new ArrayList<Put>();
     try{
-       conn = MySql_fixseqid.getInstance().getConnLocalNode("fix_"+pid);
-       Statement statement = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+       conn = MySql_fixseqid.getInstance().getConnLocalNode(pid);
+       statement = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
        statement.setFetchSize(Integer.MIN_VALUE);
        rs = statement.executeQuery("select * from sys_meta");
       int i=0;
@@ -133,15 +133,33 @@ public class ImportJob {
         i++;
       }
     }catch (Exception e){
-      
+      e.printStackTrace();
+      LOG.error(e.getMessage());  
+    } finally {
+      try {
+        if (statement != null) {
+          statement.close();
+        }
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+      try {
+        if (conn != null) {
+          conn.close();
+        }
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
     }
 
+    LOG.info("properties size:"+puts.size());
     HTable table = null;
     try {
-      table = new HTable(config, "property_" + pid);
+      table = new HTable(config, "properties_" + pid);
       table.put(puts);
       table.flushCommits();
     } catch (IOException e) {
+      LOG.error(pid+":import properties error.");
       e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
     }finally {
       try {
@@ -191,4 +209,22 @@ public class ImportJob {
             createTable(admin, tableName, families);
         }
     }
+  
+  public void batchRemove(String[] pids){
+    for(String pid:pids){
+      try {
+        admin.disableTables("property_"+pid+".*");
+        admin.deleteTables("property_"+pid+".*");
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }  
+  }
+  
+  public static void main(String[] args) throws MasterNotRunningException, ZooKeeperConnectionException {
+    ImportJob importJob = new ImportJob(HBaseConfiguration.create());
+    //importJob.importProperties("sof-dsk");
+    String[] pids = {"sof-dsk"};
+    importJob.batchRemove(pids);
+  }
 }

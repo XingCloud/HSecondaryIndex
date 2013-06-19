@@ -46,9 +46,9 @@ public class HPutTask implements Runnable  {
         HTable table = null;
         long currentTime = System.currentTimeMillis();
         try {
-          HTableAdmin.checkTable(entry.getKey(), WriteUtils.getUIIndexTableName(tableName), Constants.columnFamily); // check if table is exist, if not create it
+          HTableAdmin.checkTable(entry.getKey(), tableName, Constants.columnFamily); // check if table is exist, if not create it
           
-          table = new HTable(HTableAdmin.getHBaseConf(entry.getKey()), WriteUtils.getUIIndexTableName(tableName));//todo wcl
+          table = new HTable(HTableAdmin.getHBaseConf(entry.getKey()), tableName);
           LOG.info(tableName + " init htable .." + currentTime);
           table.setAutoFlush(false);
           table.setWriteBufferSize(Constants.WRITE_BUFFER_SIZE);

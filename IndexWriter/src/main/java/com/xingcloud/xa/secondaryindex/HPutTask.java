@@ -55,11 +55,11 @@ public class HPutTask implements Runnable  {
           
           Pair<List<Delete>, List<Put>> deletePut = optimizePuts(entry.getValue());
           
-          table.delete(deletePut.getFirst());
+          table.delete(deletePut.getFirst());//todo wcl batch
           table.put(deletePut.getSecond());
           
           table.flushCommits();
-
+           
           putHbase = false;
           LOG.info(tableName + " " + entry.getKey() + " put hbase size:" + entry.getValue().size() +
             " completed tablename is " + tableName + " using "

@@ -194,8 +194,7 @@ public class ImportJob {
         HTableDescriptor table = new HTableDescriptor(tableName);
         for(String family: families){
             HColumnDescriptor columnDescriptor = new HColumnDescriptor(family);
-            if(tableName.endsWith("_index"))
-                columnDescriptor.setMaxVersions(1);
+            columnDescriptor.setMaxVersions(2000);
             columnDescriptor.setBlocksize(512 * 1024);
             columnDescriptor.setCompressionType(Compression.Algorithm.LZO);
             table.addFamily(columnDescriptor);

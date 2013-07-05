@@ -172,9 +172,38 @@
 
         <dependency>
             <groupId>org.apache.hbase</groupId>
-            <artifactId>hbase-0.94.6-hadoop-2.0</artifactId>
-            <version>0.94.6</version>
+            <artifactId>hbase-client-0.95.1-hadoop-2.0</artifactId>
+            <version>0.95.1</version>
         </dependency>
+
+         <dependency>
+            <groupId>org.apache.hbase</groupId>
+            <artifactId>hbase-common-0.95.1-hadoop-2.0</artifactId>
+            <version>0.95.1</version>
+         </dependency>
+         
+         <dependency>
+                     <groupId>org.apache.hbase</groupId>
+                                 <artifactId>hbase-server-0.95.1-hadoop-2.0</artifactId>
+                                             <version>0.95.1</version>
+                                                      </dependency>
+
+       <dependency>
+                   <groupId>org.apache.hbase</groupId>
+                               <artifactId>hbase-it-0.95.1-hadoop-2.0</artifactId>
+                                           <version>0.95.1</version>
+                                                    </dependency>
+
+       <dependency>
+                   <groupId>org.apache.hbase</groupId>
+                               <artifactId>hbase-protocol-0.95.1-hadoop-2.0</artifactId>
+                                           <version>0.95.1</version>
+                                                    </dependency>
+        <dependency>
+                           <groupId>org.apache.hbase</groupId>
+                                                          <artifactId>hbase-prefix-tree-0.95.1-hadoop-2.0</artifactId>
+                                                                                                     <version>0.95.1</version>
+                                                                                                                                                         </dependency>
 
           <dependency>
               <groupId>hadoop-lzo</groupId>

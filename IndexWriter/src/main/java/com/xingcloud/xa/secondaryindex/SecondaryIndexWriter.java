@@ -13,10 +13,7 @@ import org.apache.log4j.xml.DOMConfigurator;
  * To change this template use File | Settings | File Templates.
  */
 public class SecondaryIndexWriter {
-  static {
-    DOMConfigurator.configure("log4j.xml");
-  }
-
+  
   private static final Log LOG = LogFactory.getLog(SecondaryIndexWriter.class);
   
   public static void main(String args[]){

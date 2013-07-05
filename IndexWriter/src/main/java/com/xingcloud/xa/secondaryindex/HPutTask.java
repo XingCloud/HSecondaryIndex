@@ -6,10 +6,7 @@ import com.xingcloud.xa.secondaryindex.utils.HTableAdmin;
 import com.xingcloud.xa.secondaryindex.utils.WriteUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.hbase.client.Delete;
-import org.apache.hadoop.hbase.client.HConnectionManager;
-import org.apache.hadoop.hbase.client.HTable;
-import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.Pair;
 
@@ -70,7 +67,7 @@ public class HPutTask implements Runnable  {
           }
           LOG.error(tableName + entry.getKey() + e.getMessage(), e);
           if (e.getMessage().contains("HConnectionImplementation") && e.getMessage().contains("closed")) {
-            HConnectionManager.deleteConnection(HTableAdmin.getHBaseConf(entry.getKey()), true);
+            HConnectionManager.deleteConnection(HTableAdmin.getHBaseConf(entry.getKey()));
             LOG.warn("delete connection to " + entry.getKey());
           }
           putHbase = true;
@@ -132,11 +129,11 @@ public class HPutTask implements Runnable  {
           if(-1 == entry.getValue()){
             Delete delete = new Delete(row);
             delete.deleteColumns(Constants.columnFamily.getBytes(), WriteUtils.getFiveByte(index.getUid()));
-            delete.setWriteToWAL(Constants.deuTableWalSwitch);
+            delete.setDurability(Durability.SKIP_WAL);
             result.getFirst().add(delete);
           }else if (1 == entry.getValue()){
             Put put = new Put(row);
-            put.setWriteToWAL(Constants.deuTableWalSwitch);
+            put.setDurability(Durability.SKIP_WAL);
             put.add(Constants.columnFamily.getBytes(), WriteUtils.getFiveByte(index.getUid()),Bytes.toBytes("0"));
             result.getSecond().add(put);
           }

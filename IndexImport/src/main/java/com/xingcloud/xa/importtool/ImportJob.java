@@ -6,7 +6,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.*;
 import org.apache.hadoop.hbase.client.*;
-import org.apache.hadoop.hbase.io.hfile.Compression;
+import org.apache.hadoop.hbase.io.compress.Compression;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.File;
@@ -38,7 +38,7 @@ public class ImportJob {
 
     private static Log LOG = LogFactory.getLog(ImportJob.class);
 
-    public ImportJob(Configuration config) throws MasterNotRunningException, ZooKeeperConnectionException {
+    public ImportJob(Configuration config) throws IOException {
         this.config = config;
         this.admin = new HBaseAdmin(config);
         this.tables = new ConcurrentHashMap<String, Boolean>();
@@ -220,9 +220,14 @@ public class ImportJob {
     }  
   }
   
-  public static void main(String[] args) throws MasterNotRunningException, ZooKeeperConnectionException {
-    ImportJob importJob = new ImportJob(HBaseConfiguration.create());
-    //importJob.importProperties("sof-dsk");
+  public static void main(String[] args) {
+      ImportJob importJob = null;
+      try {
+          importJob = new ImportJob(HBaseConfiguration.create());
+      } catch (IOException e) {
+          e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+      }
+      //importJob.importProperties("sof-dsk");
     String[] pids = {"sof-dsk"};
     importJob.batchRemove(pids);
   }

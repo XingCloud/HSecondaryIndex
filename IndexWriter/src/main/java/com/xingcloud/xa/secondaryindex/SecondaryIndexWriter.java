@@ -19,7 +19,7 @@ public class SecondaryIndexWriter {
   public static void main(String args[]){
     LOG.info("Start secondary writer service...");
     HTableAdmin.initHAdmin("single_hbase.xml");
-    new Thread(new IndexTailer("/data/log/secondaryindexconfig/")).start();
+    new Thread(new IndexTailer("/data0/log/secondaryindexconfig/")).start();
     //System.out.print(Bytes.toStringBinary(Bytes.toBytes(554062796504L)));
   }
 }

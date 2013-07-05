@@ -9,7 +9,7 @@
     </appender>
 
     <appender name="WRITER" class="org.apache.log4j.DailyRollingFileAppender">
-        <param name="File" value="/data/log/secondaryindexlog/writer.log" />
+        <param name="File" value="/data0/log/secondaryindexlog/writer.log" />
         <param name="Append" value="true" />
         <param name="Threshold" value="info" />
         <param name="DatePattern" value="'.'yyyy-MM-dd" />

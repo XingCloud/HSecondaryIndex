@@ -9,7 +9,8 @@ import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
-import org.apache.hadoop.hbase.io.hfile.Compression;
+import org.apache.hadoop.hbase.io.compress.Compression;
+import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -89,6 +90,7 @@ public class HTableAdmin {
         columnDescriptor.setMaxVersions(1);
       columnDescriptor.setBlocksize(512 * 1024);
       columnDescriptor.setCompressionType(Compression.Algorithm.LZO);
+      columnDescriptor.setDataBlockEncoding(DataBlockEncoding.PREFIX_TREE);
       table.addFamily(columnDescriptor);
     }
     admin.createTable(table);

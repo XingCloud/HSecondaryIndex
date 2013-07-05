@@ -1,5 +1,6 @@
 package com.xingcloud.xa.coprocessor;
 
+import com.google.protobuf.ServiceException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.CoprocessorEnvironment;
@@ -9,6 +10,9 @@ import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.coprocessor.BaseRegionObserver;
 import org.apache.hadoop.hbase.coprocessor.ObserverContext;
 import org.apache.hadoop.hbase.coprocessor.RegionCoprocessorEnvironment;
+import org.apache.hadoop.hbase.protobuf.ProtobufUtil;
+import org.apache.hadoop.hbase.protobuf.RequestConverter;
+import org.apache.hadoop.hbase.protobuf.generated.ClientProtos;
 import org.apache.hadoop.hbase.regionserver.HRegionServerRegister;
 import org.apache.hadoop.hbase.regionserver.wal.WALEdit;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -44,7 +48,7 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
             final ObserverContext<RegionCoprocessorEnvironment> observerContext,
             final Put put,
             final WALEdit edit,
-            final boolean writeToWAL)
+            final Durability durability)
             throws IOException {
         byte[] table  = observerContext.getEnvironment().getRegion().getRegionInfo().getTableName();
         String tableName = Bytes.toString(table);
@@ -61,7 +65,14 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         List<KeyValue> values = put.get(Bytes.toBytes("value"), Bytes.toBytes("value"));
         byte[] newValue = {};
         if(values.size() > 0) newValue = values.get(0).getValue();
-        byte[] oldValue = getValue(observerContext.getEnvironment().getRegion().getRegionName(), put.getRow());
+        byte[] oldValue = new byte[0];
+        try {
+            oldValue = getValue(observerContext.getEnvironment().getRegion().getRegionName(), put.getRow());
+        } catch (ServiceException e) {
+            e.printStackTrace();
+            LOG.error(e.getMessage());
+            return;
+        }
 
         long s2 = System.nanoTime();
         if(oldValue == null){
@@ -73,9 +84,14 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         dataTable.close();
     }
 
-  private byte[] getValue(byte[] regionName, byte[] uid) throws IOException {
+  private byte[] getValue(byte[] regionName, byte[] uid) throws IOException, ServiceException {
         Get get = new Get(uid);
-        Result result = HRegionServerRegister.getLast().get(regionName, get);
+        ClientProtos.GetRequest request = RequestConverter.buildGetRequest(regionName, get);
+        ClientProtos.GetResponse response = HRegionServerRegister.getLast().get(null, request);
+
+        if (response == null) return null;
+        Result result = ProtobufUtil.toResult(response.getResult());
+
         if(result.isEmpty()){
             return null;
         } else {

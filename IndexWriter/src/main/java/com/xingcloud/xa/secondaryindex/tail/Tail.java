@@ -235,6 +235,8 @@ public abstract class Tail {
         } else {
             if (TimeUtil.getToday() == yyyyMMdd) {
                 return this.datadir + File.separator + this.datafile;
+            } else {
+                System.out.println("Date not match!" + TimeUtil.getToday() + "\t" + yyyyMMdd);
             }
             return null;
         }

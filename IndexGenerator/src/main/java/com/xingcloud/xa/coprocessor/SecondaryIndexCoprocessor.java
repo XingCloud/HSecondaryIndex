@@ -4,7 +4,6 @@ import com.google.protobuf.ServiceException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.CoprocessorEnvironment;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.coprocessor.BaseRegionObserver;
@@ -20,10 +19,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * User: Jian Fang
@@ -56,9 +52,15 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         if(!tableName.startsWith("property_") || tableName.endsWith("_index")){
             return;
         }
-        int index = tableName.lastIndexOf("_");
-        String projectID = tableName.substring(tableName.indexOf("_")+1, index);//sof-dsk 
-        int propertyID = Integer.parseInt(tableName.substring(index + 1));
+//        int index = tableName.lastIndexOf("_");
+//        String projectID = tableName.substring(tableName.indexOf("_")+1, index);//sof-dsk
+//        int propertyID = Integer.parseInt(tableName.substring(index + 1));
+
+        String[] fields = tableName.split("_");
+        String projectID = fields[1];
+        int propertyID = Integer.parseInt(fields[2]);
+        String updateFunc = fields[3];
+
 
         long s1 = System.nanoTime();
         HTableInterface dataTable = observerContext.getEnvironment().getTable(table);
@@ -78,13 +80,46 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         if(oldValue == null){
             submitIndexJob(projectID, false, put.getRow(), propertyID, null, newValue);
         } else if(!Bytes.equals(oldValue, newValue)){
-            submitIndexJob(projectID, true, put.getRow(), propertyID, oldValue, newValue);
+            if (updateFunc.equals("c")) {
+                //Cover update manner
+                submitIndexJob(projectID, true, put.getRow(), propertyID, oldValue, newValue);
+            }
         }
         long s3 = System.nanoTime();
         dataTable.close();
     }
 
-  private byte[] getValue(byte[] regionName, byte[] uid) throws IOException, ServiceException {
+    @Override
+    public Result postIncrement(final ObserverContext<RegionCoprocessorEnvironment> observerContext,
+                                final Increment increment, final Result result) throws IOException {
+        byte[] table  = observerContext.getEnvironment().getRegion().getRegionInfo().getTableName();
+        String tableName = Bytes.toString(table);
+        if(!tableName.startsWith("property_") || tableName.endsWith("_index")){
+            return result;
+        }
+
+        String[] fields = tableName.split("_");
+        String projectID = fields[1];
+        int propertyID = Integer.parseInt(fields[2]);
+
+        Map<byte[], NavigableMap<byte [], Long>> resultMap = increment.getFamilyMapOfLongs();
+        Map<byte[], Long> specificCol = resultMap.get(Bytes.toBytes("value"));
+
+        for (KeyValue kv : result.raw()) {
+            byte[] q = kv.getQualifier();
+            long incrementVal = specificCol.get(q);
+            long resultVal = Bytes.toLong(kv.getValue());
+            if (incrementVal == resultVal) {
+                submitIndexJob(projectID, false, kv.getRow(), propertyID, null, Bytes.toBytes(resultVal));
+            } else {
+                submitIndexJob(projectID, true, kv.getRow(), propertyID, Bytes.toBytes(resultVal-incrementVal), Bytes.toBytes(resultVal));
+            }
+        }
+        return result;
+    }
+
+
+    private byte[] getValue(byte[] regionName, byte[] uid) throws IOException, ServiceException {
         Get get = new Get(uid);
         ClientProtos.GetRequest request = RequestConverter.buildGetRequest(regionName, get);
         ClientProtos.GetResponse response = HRegionServerRegister.getLast().get(null, request);
@@ -114,5 +149,7 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         jobMap.put("pid", projectID);
         LOG.info(mapper.writeValueAsString(jobMap));
     }
+
+
 
 }

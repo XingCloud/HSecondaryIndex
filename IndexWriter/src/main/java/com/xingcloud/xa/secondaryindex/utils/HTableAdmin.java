@@ -95,11 +95,15 @@ public class HTableAdmin {
     }
     admin.createTable(table);
     tables.get(host).put(tableName, true);
+    LOG.info("Create table " + tableName + " successfully!");
   }
 
   public static void checkTable(String host, String tableName, String... families) throws IOException {
+    LOG.info("Begin to check table " + tableName);
     if(!tableExists(host, tableName)){
       createTable(host, tableName, families);
+    } else {
+        LOG.info("Table " + tableName + " already exist!");
     }
   }
 

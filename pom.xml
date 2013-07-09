@@ -260,6 +260,12 @@
             <artifactId>htrace</artifactId>
             <version>1.5</version>
         </dependency>
-        
+
+        <dependency>
+            <groupId>com.xingcloud.xa</groupId>
+            <artifactId>userprops_meta_util</artifactId>
+            <version>0.1.0</version>
+        </dependency>
+
       </dependencies>
 </project>

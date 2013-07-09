@@ -56,7 +56,7 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         byte[] table  = observerContext.getEnvironment().getRegion().getRegionInfo().getTableName();
         String tableName = Bytes.toString(table);
 
-        if(!tableName.startsWith("property_") || tableName.endsWith("_index")){
+        if(!tableName.startsWith("properties_") || tableName.endsWith("_index")){
             return;
         }
 

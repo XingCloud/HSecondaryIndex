@@ -39,7 +39,7 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
     private static Map<String, Map<Integer, UpdateFunc>> metaInfo = new ConcurrentHashMap<String, Map<Integer, UpdateFunc>>();
     private static Log LOG = LogFactory.getLog(SecondaryIndexCoprocessor.class);
 
-    private static final byte[] CF_NAME = Bytes.toBytes("val");
+    private static final byte[] CF_NAME = Bytes.toBytes("value");
 
     @Override
     public void start(CoprocessorEnvironment e){

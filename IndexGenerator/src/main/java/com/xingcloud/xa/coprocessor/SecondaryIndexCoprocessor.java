@@ -84,7 +84,8 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         try {
             long s1 = System.nanoTime();
             oldValues = getValue(observerContext.getEnvironment().getRegion().getRegionName(), put.getRow(), qualifierList);
-            LOG.info("Old value size: " + oldValues.length + " Taken: " + (System.nanoTime()-s1)/1.0e9 + " sec");
+            int size = oldValues == null ? 0 : oldValues.length;
+            LOG.info("Old value size: " + size + " Taken: " + (System.nanoTime()-s1)/1.0e9 + " sec");
         } catch (ServiceException e) {
             e.printStackTrace();
             LOG.error(e.getMessage());
@@ -94,33 +95,35 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         Map<Integer, UpdateFunc> metaMap = getMetaInfo(projectID);
 
         //Put attributes which already exist in table
-        for (KeyValue kv : oldValues) {
-            int qualifier = Bytes.toInt(kv.getQualifier());
-            byte[] oldValue = kv.getValue();
-            byte[] newValue = cache.get(qualifier);
+        if (oldValues != null) {
+            for (KeyValue kv : oldValues) {
+                int qualifier = Bytes.toInt(kv.getQualifier());
+                byte[] oldValue = kv.getValue();
+                byte[] newValue = cache.get(qualifier);
 
-            UpdateFunc uf = metaMap.get(qualifier);
-            if (uf == null) {
-                //Reload meta info
-                metaMap = getMetaInfo(projectID);
-                uf = metaMap.get(qualifier);
+                UpdateFunc uf = metaMap.get(qualifier);
                 if (uf == null) {
-                    LOG.error("Attribute: [" + qualifier + "] doesn't exist in meta table!");
-                    return;
+                    //Reload meta info
+                    metaMap = getMetaInfo(projectID);
+                    uf = metaMap.get(qualifier);
+                    if (uf == null) {
+                        LOG.error("Attribute: [" + qualifier + "] doesn't exist in meta table!");
+                        return;
+                    }
                 }
-            }
 
-            if (!Bytes.equals(oldValue, newValue)) {
-                 //Update attribute value and ignore once
-                 if (uf == UpdateFunc.cover) {
-                    submitIndexJob(projectID, true, put.getRow(), qualifier, oldValue, newValue);
-                 }
-            } else if (uf == UpdateFunc.inc) {
-                 //Increment attribute value
-                 byte[] result = Bytes.toBytes(Bytes.toLong(oldValue) + Bytes.toLong(newValue));
-                 submitIndexJob(projectID, true, put.getRow(), qualifier, oldValue, result);
+                if (!Bytes.equals(oldValue, newValue)) {
+                     //Update attribute value and ignore once
+                     if (uf == UpdateFunc.cover) {
+                        submitIndexJob(projectID, true, put.getRow(), qualifier, oldValue, newValue);
+                     }
+                } else if (uf == UpdateFunc.inc) {
+                     //Increment attribute value
+                     byte[] result = Bytes.toBytes(Bytes.toLong(oldValue) + Bytes.toLong(newValue));
+                     submitIndexJob(projectID, true, put.getRow(), qualifier, oldValue, result);
+                }
+                cache.remove(qualifier);
             }
-            cache.remove(qualifier);
         }
 
         //Put remain attributes which don't exist in table before

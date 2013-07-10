@@ -171,7 +171,7 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         String oldValueStr = Bytes.toStringBinary(oldValue);
         String newValueStr = Bytes.toStringBinary(newValue);
 
-        INDEX_LOG.info(ts + "\t" + uidL + "\t" + propertyID + "\t" + oldValueStr + "\t" + newValueStr + "\t" + shouldDel + "\t" + projectID);
+//        INDEX_LOG.info(ts + "\t" + uidL + "\t" + propertyID + "\t" + oldValueStr + "\t" + newValueStr + "\t" + shouldDel + "\t" + projectID);
 //        LOG.info(mapper.writeValueAsString(jobMap));
     }
 

@@ -90,7 +90,7 @@ public class HTableAdmin {
         columnDescriptor.setMaxVersions(1);
       columnDescriptor.setBlocksize(512 * 1024);
       columnDescriptor.setCompressionType(Compression.Algorithm.LZO);
-      columnDescriptor.setDataBlockEncoding(DataBlockEncoding.PREFIX_TREE);
+//      columnDescriptor.setDataBlockEncoding(DataBlockEncoding.PREFIX_TREE);
       table.addFamily(columnDescriptor);
     }
     admin.createTable(table);

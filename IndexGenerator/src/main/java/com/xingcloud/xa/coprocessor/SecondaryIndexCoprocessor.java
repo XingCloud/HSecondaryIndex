@@ -156,15 +156,22 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         byte[] convertedUid = {0,0,0,0,0,0,0,0};
         for(int i = 0; i < 5; i++)
             convertedUid[i+3] = uid[i];
-        Map<String, Object> jobMap = new HashMap<String, Object>();
-        jobMap.put("timestamp", new SimpleDateFormat("yyyyMMdd").format(Calendar.getInstance().getTime()));
-        jobMap.put("uid", Bytes.toLong(convertedUid));
-        jobMap.put("propertyID", propertyID);
-        jobMap.put("old_value", Bytes.toStringBinary(oldValue));
-        jobMap.put("new_value", Bytes.toStringBinary(newValue));
-        jobMap.put("delete", shouldDel);
-        jobMap.put("pid", projectID);
-        INDEX_LOG.info(mapper.writeValueAsString(jobMap));
+//        Map<String, Object> jobMap = new HashMap<String, Object>();
+//        jobMap.put("timestamp", new SimpleDateFormat("yyyyMMdd").format(Calendar.getInstance().getTime()));
+//        jobMap.put("uid", Bytes.toLong(convertedUid));
+//        jobMap.put("propertyID", propertyID);
+//        jobMap.put("old_value", Bytes.toStringBinary(oldValue));
+//        jobMap.put("new_value", Bytes.toStringBinary(newValue));
+//        jobMap.put("delete", shouldDel);
+//        jobMap.put("pid", projectID);
+//        INDEX_LOG.info(mapper.writeValueAsString(jobMap));
+
+        long ts = System.currentTimeMillis();//new SimpleDateFormat("yyyyMMdd").format(Calendar.getInstance().getTime());
+        long uidL = Bytes.toLong(convertedUid);
+        String oldValueStr = Bytes.toStringBinary(oldValue);
+        String newValueStr = Bytes.toStringBinary(newValue);
+
+        LOG.info(ts + "\t" + uidL + "\t" + propertyID + "\t" + oldValueStr + "\t" + newValueStr + "\t" + shouldDel + "\t" + projectID);
 //        LOG.info(mapper.writeValueAsString(jobMap));
     }
 

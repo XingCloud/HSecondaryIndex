@@ -17,6 +17,7 @@ import org.apache.hadoop.hbase.coprocessor.RegionCoprocessorEnvironment;
 import org.apache.hadoop.hbase.protobuf.ProtobufUtil;
 import org.apache.hadoop.hbase.protobuf.RequestConverter;
 import org.apache.hadoop.hbase.protobuf.generated.ClientProtos;
+import org.apache.hadoop.hbase.regionserver.HRegionServer;
 import org.apache.hadoop.hbase.regionserver.HRegionServerRegister;
 import org.apache.hadoop.hbase.regionserver.wal.WALEdit;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -37,7 +38,8 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
     private ObjectMapper mapper;
 
     private static Map<String, Map<Integer, UpdateFunc>> metaInfo = new ConcurrentHashMap<String, Map<Integer, UpdateFunc>>();
-    private static Log LOG = LogFactory.getLog(SecondaryIndexCoprocessor.class);
+    private static Log INDEX_LOG = LogFactory.getLog(SecondaryIndexCoprocessor.class);
+    private static Log LOG = LogFactory.getLog(HRegionServer.class);
 
     private static final byte[] CF_NAME = Bytes.toBytes("value");
 
@@ -162,7 +164,7 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         jobMap.put("new_value", Bytes.toStringBinary(newValue));
         jobMap.put("delete", shouldDel);
         jobMap.put("pid", projectID);
-        LOG.info(mapper.writeValueAsString(jobMap));
+        INDEX_LOG.info(mapper.writeValueAsString(jobMap));
     }
 
     private Map<Integer, UpdateFunc> getMetaInfo(String projectID) throws IOException {

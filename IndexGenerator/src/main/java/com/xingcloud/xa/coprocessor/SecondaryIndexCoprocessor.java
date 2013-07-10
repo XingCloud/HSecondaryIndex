@@ -168,6 +168,7 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         jobMap.put("delete", shouldDel);
         jobMap.put("pid", projectID);
         INDEX_LOG.info(mapper.writeValueAsString(jobMap));
+        LOG.info(mapper.writeValueAsString(jobMap));
     }
 
     private Map<Integer, UpdateFunc> getMetaInfo(String projectID) throws IOException {

@@ -77,7 +77,7 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
             cache.put(Bytes.toInt(qualifier), kv.getValue());
         }
 
-        LOG.info("Num of puts for one row: " + cache.size());
+//        LOG.info("Num of puts for one row: " + cache.size());
 
         //Get old values which related to the qualifier
         KeyValue[] oldValues = null;
@@ -85,7 +85,7 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
             long s1 = System.nanoTime();
             oldValues = getValue(observerContext.getEnvironment().getRegion().getRegionName(), put.getRow(), qualifierList);
             int size = oldValues == null ? 0 : oldValues.length;
-            LOG.info("Old value size: " + size + " Taken: " + (System.nanoTime()-s1)/1.0e9 + " sec");
+//            LOG.info("Old value size: " + size + " Taken: " + (System.nanoTime()-s1)/1.0e9 + " sec");
         } catch (ServiceException e) {
             e.printStackTrace();
             LOG.error(e.getMessage());
@@ -168,7 +168,7 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         jobMap.put("delete", shouldDel);
         jobMap.put("pid", projectID);
         INDEX_LOG.info(mapper.writeValueAsString(jobMap));
-        LOG.info(mapper.writeValueAsString(jobMap));
+//        LOG.info(mapper.writeValueAsString(jobMap));
     }
 
     private Map<Integer, UpdateFunc> getMetaInfo(String projectID) throws IOException {

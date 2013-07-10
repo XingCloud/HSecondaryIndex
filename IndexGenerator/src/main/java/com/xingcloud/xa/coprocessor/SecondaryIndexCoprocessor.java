@@ -82,10 +82,7 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         //Get old values which related to the qualifier
         KeyValue[] oldValues = null;
         try {
-            long s1 = System.nanoTime();
             oldValues = getValue(observerContext.getEnvironment().getRegion().getRegionName(), put.getRow(), qualifierList);
-            int size = oldValues == null ? 0 : oldValues.length;
-//            LOG.info("Old value size: " + size + " Taken: " + (System.nanoTime()-s1)/1.0e9 + " sec");
         } catch (ServiceException e) {
             e.printStackTrace();
             LOG.error(e.getMessage());

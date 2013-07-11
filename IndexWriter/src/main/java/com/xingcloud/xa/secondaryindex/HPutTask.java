@@ -122,12 +122,12 @@ public class HPutTask implements Runnable  {
           }
 
           byte[] row = WriteUtils.getUIIndexRowKey(index.getPropertyID(), index.getDate(), index.getValue());
-          if(0 < entry.getValue()){
+          if(0 > entry.getValue()){
             Delete delete = new Delete(row);
             delete.deleteColumns(Constants.columnFamily.getBytes(), WriteUtils.getFiveByte(index.getUid()));
             delete.setDurability(Durability.SKIP_WAL);
             result.getFirst().add(delete);
-          }else if (0 > entry.getValue()){
+          }else if (0 < entry.getValue()){
             Put put = new Put(row);
             put.setDurability(Durability.SKIP_WAL);
             put.add(Constants.columnFamily.getBytes(), WriteUtils.getFiveByte(index.getUid()),Bytes.toBytes("0"));

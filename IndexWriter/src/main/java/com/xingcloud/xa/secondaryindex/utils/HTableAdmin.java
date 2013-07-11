@@ -91,12 +91,14 @@ public class HTableAdmin {
     }
     admin.createTable(table);
     tables.put(tableName, true);
+    LOG.info("Add table " + tableName + " to table list. Size: " + tables.size());
     LOG.info("Create table " + tableName + " successfully!");
   }
 
   public static void checkTable(String tableName, String... families) throws IOException {
     LOG.info("Begin to check table " + tableName);
     if(!tableExists(tableName)){
+      LOG.info("Table list doesn't contain " + tableName + " Size: " + tables.size());
       createTable(tableName, families);
     }
   }

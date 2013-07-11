@@ -100,7 +100,6 @@ public class HPutTask implements Runnable  {
         Map<Index, Integer> combineMap = new HashMap<Index, Integer>();
 
         for(Index index: indexes){
-          LOG.info("Process " + index);
           int operation = 1;
           if(index.getOperation().equals("delete")){
             operation = -1;

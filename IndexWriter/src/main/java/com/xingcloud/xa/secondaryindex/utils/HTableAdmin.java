@@ -65,8 +65,11 @@ public class HTableAdmin {
     try {
       HTableDescriptor[] tableDescriptors = admin.listTables();
       for(HTableDescriptor tableDescriptor: tableDescriptors){
-        tables.put(tableDescriptor.getNameAsString(), true);
+        String tableName = tableDescriptor.getNameAsString();
+        LOG.info("Add " + tableName + " to table list...");
+        tables.put(tableName, true);
       }
+    LOG.info("Init tables finished.");
     }catch (Exception e){
       e.printStackTrace();
     }
@@ -74,6 +77,7 @@ public class HTableAdmin {
   }
 
   private static void createTable(String tableName, String... families) throws IOException {
+    LOG.info("Begin to create table " + tableName);
     HTableDescriptor table = new HTableDescriptor(tableName);
     for(String family: families){
       HColumnDescriptor columnDescriptor = new HColumnDescriptor(family);
@@ -93,8 +97,6 @@ public class HTableAdmin {
     LOG.info("Begin to check table " + tableName);
     if(!tableExists(tableName)){
       createTable(tableName, families);
-    } else {
-      LOG.info("Table " + tableName + " already exist!");
     }
   }
 

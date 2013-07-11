@@ -91,8 +91,6 @@ public class IndexTailer extends Tail implements Runnable{
         delete = new Index(tableName, uid, propertyID, oldValue, "delete", timestamp);    
       }
 
-      String hbaseAddress = "HBASE";//todo wcl
-
       List<Index> indexes = putsMap.get(tableName);
 
       if (indexes == null) {

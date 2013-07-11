@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created with IntelliJ IDEA.
@@ -28,7 +29,7 @@ public class HTableAdmin {
   private static Log LOG = LogFactory.getLog(HTableAdmin.class);
   private static HBaseAdmin admin;
   private static Configuration hbaseConf = new Configuration();
-  private static Map<String, Boolean> tables = new HashMap<String, Boolean>();
+  private static Map<String, Boolean> tables = new ConcurrentHashMap<String, java.lang.Boolean>();
 
   public static Configuration getHBaseConf() {
     return hbaseConf;

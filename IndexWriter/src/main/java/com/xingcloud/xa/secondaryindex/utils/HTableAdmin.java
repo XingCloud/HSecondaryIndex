@@ -26,54 +26,46 @@ import java.util.Map;
  */
 public class HTableAdmin {
   private static Log LOG = LogFactory.getLog(HTableAdmin.class);
-  private static Map<String, HBaseAdmin> admins = new HashMap<String, HBaseAdmin>();
-  private static Map<String, Configuration> hbaseConfs = new HashMap<String, Configuration>();
-  private static Map<String, Map<String, Boolean>> tables = new HashMap<String, Map<String, Boolean>>();
+  private static HBaseAdmin admin;
+  private static Configuration hbaseConf = new Configuration();
+  private static Map<String, Boolean> tables = new HashMap<String, Boolean>();
 
-  public static Configuration getHBaseConf(String host) {
-    return hbaseConfs.get(host);
+  public static Configuration getHBaseConf() {
+    return hbaseConf;
   }
 
-  public static Map<String, HBaseAdmin> getAdmins() {
-    return admins;
+  public static HBaseAdmin getAdmin() {
+    return admin;
   }
 
-  public static Map<String, Map<String, Boolean>> getTables() {
+  public static Map<String, Boolean> getTables() {
     return tables;
   }
  
   public static void initHAdmin(String file){
     LOG.info("load hbase infomation");
     Dom dom = ConfigReader.getDom(file);
-    List<Dom> hbaseDomList = dom.elements("hbase");
-    for (Dom hbase : hbaseDomList) {
-      String host = hbase.elementText("zookeeper");
-      try {
-        Configuration conf = HBaseConfiguration.create();
-        conf.set("hbase.zookeeper.quorum", host);
-        conf.set("hbase.zookeeper.property.clientPort", Constants.HBASE_PORT);
-        HBaseAdmin admin = new HBaseAdmin(conf);  
-        hbaseConfs.put(host, conf);
-        admins.put(host, admin);
-        initTables(host);
-      } catch (Exception e) {
-        e.printStackTrace();
-        LOG.error("Exception when init proxy", e);
-      }
-    } 
+    Dom hbase = dom.element("hbase");
+    String host = hbase.elementText("zookeeper");
+    Configuration conf = HBaseConfiguration.create();
+    conf.set("hbase.zookeeper.quorum", host);
+    conf.set("hbase.zookeeper.property.clientPort", Constants.HBASE_PORT);
+
+    try {
+      admin = new HBaseAdmin(conf);
+      initTables();
+    } catch (IOException e) {
+      e.printStackTrace();
+      LOG.error("Exception when init proxy", e);
+    }
     LOG.info("finish load hbase information");
   }
   
-  private static void initTables(String host) {
+  private static void initTables() {
     try {
-      if (!tables.containsKey(host)){
-        tables.put(host, new HashMap<String, Boolean>());
-      }
-      
-      HTableDescriptor[] tableDescriptors = admins.get(host).listTables();
+      HTableDescriptor[] tableDescriptors = admin.listTables();
       for(HTableDescriptor tableDescriptor: tableDescriptors){
-        
-        tables.get(host).put(tableDescriptor.getNameAsString(), true);
+        tables.put(tableDescriptor.getNameAsString(), true);
       }
     }catch (Exception e){
       e.printStackTrace();
@@ -81,34 +73,33 @@ public class HTableAdmin {
 
   }
 
-  private static void createTable(String host, String tableName, String... families) throws IOException {
-    HBaseAdmin admin = admins.get(host);
+  private static void createTable(String tableName, String... families) throws IOException {
     HTableDescriptor table = new HTableDescriptor(tableName);
     for(String family: families){
       HColumnDescriptor columnDescriptor = new HColumnDescriptor(family);
       if(tableName.endsWith("_index"))
         columnDescriptor.setMaxVersions(1);
-      columnDescriptor.setBlocksize(512 * 1024);
-      columnDescriptor.setCompressionType(Compression.Algorithm.LZO);
+        columnDescriptor.setBlocksize(512 * 1024);
+        columnDescriptor.setCompressionType(Compression.Algorithm.LZO);
 //      columnDescriptor.setDataBlockEncoding(DataBlockEncoding.PREFIX_TREE);
-      table.addFamily(columnDescriptor);
+        table.addFamily(columnDescriptor);
     }
     admin.createTable(table);
-    tables.get(host).put(tableName, true);
+    tables.put(tableName, true);
     LOG.info("Create table " + tableName + " successfully!");
   }
 
-  public static void checkTable(String host, String tableName, String... families) throws IOException {
+  public static void checkTable(String tableName, String... families) throws IOException {
     LOG.info("Begin to check table " + tableName);
-    if(!tableExists(host, tableName)){
-      createTable(host, tableName, families);
+    if(!tableExists(tableName)){
+      createTable(tableName, families);
     } else {
-        LOG.info("Table " + tableName + " already exist!");
+      LOG.info("Table " + tableName + " already exist!");
     }
   }
 
-  private static  boolean tableExists(String host, String tableName) throws IOException {   
-    return tables.containsKey(host) && tables.get(host).containsKey(tableName);
+  private static boolean tableExists(String tableName) throws IOException {
+    return tables.containsKey(tableName);
   }
 
 }

@@ -36,14 +36,14 @@ public class IndexTailer extends Tail implements Runnable{
   @Override
   public void send(List<String> logs, long day) {
     try{
-      Map<String, Map<String, List<Index>>> putsMap =  dispatchPuts(logs);
+      Map<String, List<Index>> putsMap =  dispatchPuts(logs);
       ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(Constants.EXECUTOR_THREAD_COUNT,
         Constants.EXECUTOR_THREAD_COUNT,
         30,
         TimeUnit.MINUTES,
         new LinkedBlockingQueue<Runnable>());
       
-      for(Map.Entry<String, Map<String, List<Index>>> entry: putsMap.entrySet()){
+      for(Map.Entry<String, List<Index>> entry: putsMap.entrySet()){
         threadPoolExecutor.execute(new HPutTask(entry.getKey(), entry.getValue()));
       }
       
@@ -70,18 +70,19 @@ public class IndexTailer extends Tail implements Runnable{
     }
   }
   
-  private Map<String, Map<String, List<Index>>> dispatchPuts(List<String> logs) throws IOException {
-    Map<String, Map<String, List<Index>>> putsMap = new HashMap<String, Map<String, List<Index>>>();
-    ObjectMapper mapper = new ObjectMapper();
+  private Map<String, List<Index>> dispatchPuts(List<String> logs) throws IOException {
+    Map<String, List<Index>> putsMap = new HashMap<String, List<Index>>();
     for(String log: logs){
-      Map<String,Object> data = mapper.readValue(log.getBytes(), Map.class);
-      String tableName = "property_"+(String)data.get("pid")+"_index";
-      long uid = Long.valueOf(String.valueOf(data.get("uid")));
-      int propertyID = Integer.valueOf(String.valueOf(data.get("propertyID")));
-      String oldValue = (String)data.get("old_value");
-      String newValue = (String)data.get("new_value");
-      String timestamp = (String)data.get("timestamp");
-      Boolean needDelete = (Boolean)data.get("delete");
+
+      String[] fields = log.split("\t");
+      long timestamp = Long.parseLong(fields[0]);
+      long uid = Long.parseLong(fields[1]);
+      int propertyID = Integer.parseInt(fields[2]);
+      String oldValue = fields[3];
+      String newValue = fields[4];
+      boolean needDelete = Boolean.valueOf(fields[5]);
+      String tableName = "property_" + fields[6];
+
       
       Index put = new Index(tableName, uid, propertyID, newValue, "put", timestamp);   
       Index delete = null;
@@ -90,20 +91,19 @@ public class IndexTailer extends Tail implements Runnable{
         delete = new Index(tableName, uid, propertyID, oldValue, "delete", timestamp);    
       }
 
-      //String hbaseAddress = UidMappingUtil.getInstance().ha sh(Long.valueOf(uid));
       String hbaseAddress = "HBASE";//todo wcl
-      
-      if(! putsMap.containsKey(tableName)){
-        putsMap.put(tableName, new HashMap<String, List<Index>>());
+
+      List<Index> indexes = putsMap.get(tableName);
+
+      if (indexes == null) {
+          indexes = new ArrayList<Index>();
+          putsMap.put(tableName, indexes);
       }
-      
-      if(! putsMap.get(tableName).containsKey(hbaseAddress)){
-        putsMap.get(tableName).put(hbaseAddress, new ArrayList<Index>());   
-      }
-      
-      if (delete != null ) putsMap.get(tableName).get(hbaseAddress).add(delete);
-      putsMap.get(tableName).get(hbaseAddress).add(put);
-      
+
+
+      if (delete != null ) indexes.add(delete);
+      indexes.add(put);
+
     }  
     return putsMap;
   }

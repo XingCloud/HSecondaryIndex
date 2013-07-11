@@ -21,10 +21,8 @@ import org.apache.hadoop.hbase.regionserver.HRegionServer;
 import org.apache.hadoop.hbase.regionserver.HRegionServerRegister;
 import org.apache.hadoop.hbase.regionserver.wal.WALEdit;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.codehaus.jackson.map.ObjectMapper;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -34,8 +32,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * Time: 下午2:28
  */
 public class SecondaryIndexCoprocessor extends BaseRegionObserver {
-    private HTablePool pool;
-    private ObjectMapper mapper;
 
     private static Map<String, Map<Integer, UpdateFunc>> metaInfo = new ConcurrentHashMap<String, Map<Integer, UpdateFunc>>();
     private static Log INDEX_LOG = LogFactory.getLog(SecondaryIndexCoprocessor.class);
@@ -43,9 +39,9 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
 
     private static final byte[] CF_NAME = Bytes.toBytes("value");
 
+
     @Override
     public void start(CoprocessorEnvironment e){
-        mapper = new ObjectMapper();
     }
 
     @Override
@@ -68,16 +64,22 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         HTableInterface dataTable = observerContext.getEnvironment().getTable(table);
 
         List<byte[]> qualifierList = new ArrayList<byte[]>();
-        Map<Integer, byte[]> cache = new HashMap<Integer, byte[]>();
+        //Cache KV in puts
+        Map<Integer, KeyValue> kvCache = new HashMap<Integer, KeyValue>();
+        //Cache index in puts
+        Map<Integer, Integer> indexCache = new HashMap<Integer, Integer>();
 
-        for (Cell cell : put.getFamilyMap().get(CF_NAME)) {
+        List<? extends Cell> cells = put.getFamilyMap().get(CF_NAME);
+
+        int i = 0;
+        for (Cell cell : cells) {
             KeyValue kv = KeyValueUtil.ensureKeyValue(cell);
             byte[] qualifier = kv.getQualifier();
             qualifierList.add(qualifier);
-            cache.put(Bytes.toInt(qualifier), kv.getValue());
+            kvCache.put(Bytes.toInt(qualifier), kv);
+            indexCache.put(Bytes.toInt(qualifier), i);
+            i++;
         }
-
-//        LOG.info("Num of puts for one row: " + cache.size());
 
         //Get old values which related to the qualifier
         KeyValue[] oldValues = null;
@@ -93,10 +95,12 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
 
         //Put attributes which already exist in table
         if (oldValues != null) {
-            for (KeyValue kv : oldValues) {
-                int qualifier = Bytes.toInt(kv.getQualifier());
-                byte[] oldValue = kv.getValue();
-                byte[] newValue = cache.get(qualifier);
+            for (KeyValue kvOld : oldValues) {
+                int qualifier = Bytes.toInt(kvOld.getQualifier());
+                byte[] oldValue = kvOld.getValue();
+                KeyValue kvNew = kvCache.get(qualifier);
+                byte[] newValue = kvNew.getValue();
+                long ts = kvNew.getTimestamp();
 
                 UpdateFunc uf = metaMap.get(qualifier);
                 if (uf == null) {
@@ -108,26 +112,36 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
                         return;
                     }
                 }
-
                 if (!Bytes.equals(oldValue, newValue)) {
                      //Update attribute value and ignore once
                      if (uf == UpdateFunc.cover) {
-                        submitIndexJob(projectID, true, put.getRow(), qualifier, oldValue, newValue);
+                        submitIndexJob(projectID, true, put.getRow(), qualifier, oldValue, newValue, ts);
                      }
                 } else if (uf == UpdateFunc.inc) {
                      //Increment attribute value
-                     byte[] result = Bytes.toBytes(Bytes.toLong(oldValue) + Bytes.toLong(newValue));
-                     submitIndexJob(projectID, true, put.getRow(), qualifier, oldValue, result);
+                    int index = indexCache.get(qualifier);
+                    cells.remove(index);
+                    if (ts > kvOld.getTimestamp()) {
+                        byte[] result = Bytes.toBytes(Bytes.toLong(oldValue) + Bytes.toLong(newValue));
+                        submitIndexJob(projectID, true, put.getRow(), qualifier, oldValue, result, ts);
+                        //Increment val and put to table
+                        put.add(CF_NAME, Bytes.toBytes(qualifier), ts, result);
+                    }
                 }
-                cache.remove(qualifier);
+                kvCache.remove(qualifier);
             }
         }
 
         //Put remain attributes which don't exist in table before
-        for (Map.Entry<Integer, byte[]> entry : cache.entrySet()) {
+        for (Map.Entry<Integer, KeyValue> entry : kvCache.entrySet()) {
             int qualifier = entry.getKey();
-            byte[] val = entry.getValue();
-            submitIndexJob(projectID, false, put.getRow(), qualifier, null, val);
+            KeyValue kv = entry.getValue();
+            UpdateFunc uf = metaMap.get(qualifier);
+            long ts = kv.getTimestamp();
+            if (uf == UpdateFunc.once) {
+                ts = Long.MAX_VALUE - ts;
+            }
+            submitIndexJob(projectID, false, put.getRow(), qualifier, null, kv.getValue(), ts);
         }
 
         dataTable.close();
@@ -152,27 +166,16 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
     }
 
     private void submitIndexJob(String projectID, boolean shouldDel, byte[] uid,
-                                int propertyID, byte[] oldValue, byte[] newValue) throws IOException {
+                                int propertyID, byte[] oldValue, byte[] newValue, long ts) throws IOException {
         byte[] convertedUid = {0,0,0,0,0,0,0,0};
         for(int i = 0; i < 5; i++)
             convertedUid[i+3] = uid[i];
-//        Map<String, Object> jobMap = new HashMap<String, Object>();
-//        jobMap.put("timestamp", new SimpleDateFormat("yyyyMMdd").format(Calendar.getInstance().getTime()));
-//        jobMap.put("uid", Bytes.toLong(convertedUid));
-//        jobMap.put("propertyID", propertyID);
-//        jobMap.put("old_value", Bytes.toStringBinary(oldValue));
-//        jobMap.put("new_value", Bytes.toStringBinary(newValue));
-//        jobMap.put("delete", shouldDel);
-//        jobMap.put("pid", projectID);
-//        INDEX_LOG.info(mapper.writeValueAsString(jobMap));
 
-        long ts = System.currentTimeMillis();//new SimpleDateFormat("yyyyMMdd").format(Calendar.getInstance().getTime());
         long uidL = Bytes.toLong(convertedUid);
         String oldValueStr = Bytes.toStringBinary(oldValue);
         String newValueStr = Bytes.toStringBinary(newValue);
 
-//        INDEX_LOG.info(ts + "\t" + uidL + "\t" + propertyID + "\t" + oldValueStr + "\t" + newValueStr + "\t" + shouldDel + "\t" + projectID);
-//        LOG.info(mapper.writeValueAsString(jobMap));
+        INDEX_LOG.info(ts + "\t" + uidL + "\t" + propertyID + "\t" + oldValueStr + "\t" + newValueStr + "\t" + shouldDel + "\t" + projectID);
     }
 
     private Map<Integer, UpdateFunc> getMetaInfo(String projectID) throws IOException {

@@ -50,14 +50,15 @@ public class HPutTask implements Runnable  {
           table.setWriteBufferSize(Constants.WRITE_BUFFER_SIZE);
           
           Pair<List<Delete>, List<Put>> deletePut = optimizePuts(indexes);
-          
+          LOG.info("Delete siz: " + deletePut.getFirst().size() + "\tPut size: " + deletePut.getSecond().size());
+
           table.delete(deletePut.getFirst());//todo wcl batch
           table.put(deletePut.getSecond());
           
           table.flushCommits();
            
           putHbase = false;
-          LOG.info(tableName + " " + tableName + " put hbase size:" + indexes.size() +
+          LOG.info(tableName + " " + tableName + " Put size:" + indexes.size() +
             " completed tablename is " + tableName + " using "
             + (System.currentTimeMillis() - currentTime) + "ms");
         } catch (IOException e) {
@@ -97,10 +98,10 @@ public class HPutTask implements Runnable  {
         result.setSecond(new ArrayList<Put>());
 
         Map<Index, Integer> combineMap = new HashMap<Index, Integer>();
-        int operation;
-        
+
         for(Index index: indexes){
-          operation = 1;
+          LOG.info("Process " + index);
+          int operation = 1;
           if(index.getOperation().equals("delete")){
             operation = -1;
           }
@@ -115,6 +116,10 @@ public class HPutTask implements Runnable  {
         
         for(Map.Entry<Index, Integer> entry:combineMap.entrySet()){
           Index index = entry.getKey();
+          int operation = entry.getValue();
+          if (operation == 0) {
+              continue;
+          }
 
           byte[] row = WriteUtils.getUIIndexRowKey(index.getPropertyID(), index.getDate(), index.getValue());
           if(0 < entry.getValue()){

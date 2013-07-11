@@ -81,7 +81,7 @@ public class IndexTailer extends Tail implements Runnable{
       String oldValue = fields[3];
       String newValue = fields[4];
       boolean needDelete = Boolean.valueOf(fields[5]);
-      String tableName = "property_" + fields[6];
+      String tableName = "property_" + fields[6] + "_index";
 
       
       Index put = new Index(tableName, uid, propertyID, newValue, "put", timestamp);   

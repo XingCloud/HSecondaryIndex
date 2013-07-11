@@ -89,7 +89,7 @@ public class HPutTask implements Runnable  {
     }
   }
   
-  private Pair<List<Delete>, List<Put>> optimizePuts(List<Index> indexs){
+  private Pair<List<Delete>, List<Put>> optimizePuts(List<Index> indexes){
  
       Pair<List<Delete>, List<Put>> result = new Pair<List<Delete>, List<Put>>();
       try{
@@ -99,7 +99,7 @@ public class HPutTask implements Runnable  {
         Map<Index, Integer> combineMap = new HashMap<Index, Integer>();
         int operation;
         
-        for(Index index: indexs){
+        for(Index index: indexes){
           operation = 1;
           if(index.getOperation().equals("delete")){
             operation = -1;

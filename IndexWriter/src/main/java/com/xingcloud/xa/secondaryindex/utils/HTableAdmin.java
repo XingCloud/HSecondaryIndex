@@ -47,12 +47,12 @@ public class HTableAdmin {
     Dom dom = ConfigReader.getDom(file);
     Dom hbase = dom.element("hbase");
     String host = hbase.elementText("zookeeper");
-    Configuration conf = HBaseConfiguration.create();
-    conf.set("hbase.zookeeper.quorum", host);
-    conf.set("hbase.zookeeper.property.clientPort", Constants.HBASE_PORT);
+    hbaseConf = HBaseConfiguration.create();
+    hbaseConf.set("hbase.zookeeper.quorum", host);
+    hbaseConf.set("hbase.zookeeper.property.clientPort", Constants.HBASE_PORT);
 
     try {
-      admin = new HBaseAdmin(conf);
+      admin = new HBaseAdmin(hbaseConf);
       initTables();
     } catch (IOException e) {
       e.printStackTrace();

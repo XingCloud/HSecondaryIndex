@@ -80,6 +80,8 @@ public class HPutTask implements Runnable  {
   private List<List<Mutation>> optimizePuts(List<Index> indexes) {
  
       List<List<Mutation>> result = new ArrayList<List<Mutation>>();
+      List<Mutation> mutations = new ArrayList<Mutation>(2000);
+      result.add(mutations);
       try{
         Map<Index, Integer> combineMap = new HashMap<Index, Integer>();
 

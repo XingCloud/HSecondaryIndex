@@ -1,6 +1,8 @@
 package com.xingcloud.xa.secondaryindex;
 
+import com.xingcloud.xa.secondaryindex.manager.HBaseResourceManager;
 import com.xingcloud.xa.secondaryindex.model.Index;
+import com.xingcloud.xa.secondaryindex.pool.ThreadPool;
 import com.xingcloud.xa.secondaryindex.utils.Constants;
 import com.xingcloud.xa.secondaryindex.utils.HTableAdmin;
 import com.xingcloud.xa.secondaryindex.utils.WriteUtils;
@@ -15,6 +17,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.FutureTask;
 
 /**
  * Created with IntelliJ IDEA.
@@ -37,66 +40,47 @@ public class HPutTask implements Runnable  {
   @Override
   public void run() {
     try{
-        boolean putHbase = true;
-        while (putHbase) {
-        HTable table = null;
-        long currentTime = System.currentTimeMillis();
+        long s1 = System.nanoTime();
         try {
           HTableAdmin.checkTable(tableName, Constants.columnFamily); // check if table is exist, if not create it
           
-          table = new HTable(HTableAdmin.getHBaseConf(), tableName);
-          LOG.info(tableName + " init htable .." + currentTime);
-          table.setAutoFlush(false);
-          table.setWriteBufferSize(Constants.WRITE_BUFFER_SIZE);
-          
-          Pair<List<Delete>, List<Put>> deletePut = optimizePuts(indexes);
-          LOG.info("Delete siz: " + deletePut.getFirst().size() + "\tPut size: " + deletePut.getSecond().size());
+          List<List<Mutation>> result = optimizePuts(indexes);
+          LOG.info(tableName + " Group: " + result.size() + "\tOptimize taken: " + (System.nanoTime()-s1)/1.0e9 + " sec");
 
-          table.delete(deletePut.getFirst());//todo wcl batch
-          table.put(deletePut.getSecond());
-          
-          table.flushCommits();
+          long s2 = System.nanoTime();
+          List<FutureTask> futures = new ArrayList<FutureTask>();
+          for (List<Mutation> operations : result) {
+            HBaseOperationTask operationTask = new HBaseOperationTask(tableName, operations);
+            FutureTask future = ThreadPool.getInstance().addInnerTask(operationTask);
+            futures.add(future);
+          }
+
+          //Wait for all put tasks finish
+          for (FutureTask f : futures) {
+            if (f.get() != null) {
+              int state = (Integer)f.get();
+            }
+          }
            
-          putHbase = false;
           LOG.info(tableName + " " + tableName + " Put size:" + indexes.size() +
             " completed tablename is " + tableName + " using "
-            + (System.currentTimeMillis() - currentTime) + "ms");
+            + (System.nanoTime()-s2)/1.0e9 + " sec");
         } catch (IOException e) {
           if (e.getMessage().contains("interrupted")) {
             throw e;
           }
-          LOG.error(tableName + tableName + e.getMessage(), e);
-          if (e.getMessage().contains("HConnectionImplementation") && e.getMessage().contains("closed")) {
-            HConnectionManager.deleteConnection(HTableAdmin.getHBaseConf());
-          }
-          putHbase = true;
-
-          LOG.info("trying put hbase " + tableName + " " + tableName + "again...tablename " +
-            ":" + tableName);
-          Thread.sleep(5000);
-        } finally {
-          try {
-            if (table != null) {
-              table.close();
-              LOG.info(tableName + " close this htable." + currentTime);
-            }
-          } catch (IOException e) {
-            LOG.error(tableName + e.getMessage(), e);
-          }
+          LOG.error(tableName + "\t" + e.getMessage(), e);
         }
-      }
+
     }catch (Exception e){
-      e.printStackTrace();  
+      LOG.error(e.getMessage(), e);
     }
   }
   
-  private Pair<List<Delete>, List<Put>> optimizePuts(List<Index> indexes){
+  private List<List<Mutation>> optimizePuts(List<Index> indexes) {
  
-      Pair<List<Delete>, List<Put>> result = new Pair<List<Delete>, List<Put>>();
+      List<List<Mutation>> result = new ArrayList<List<Mutation>>();
       try{
-        result.setFirst(new ArrayList<Delete>());
-        result.setSecond(new ArrayList<Put>());
-
         Map<Index, Integer> combineMap = new HashMap<Index, Integer>();
 
         for(Index index: indexes){
@@ -112,7 +96,9 @@ public class HPutTask implements Runnable  {
               combineMap.put(index, operation+indexType);
           }
         }
-        
+
+        int currentSize = 0;
+        int i = 0;
         for(Map.Entry<Index, Integer> entry:combineMap.entrySet()){
           Index index = entry.getKey();
           int operation = entry.getValue();
@@ -121,16 +107,29 @@ public class HPutTask implements Runnable  {
           }
 
           byte[] row = WriteUtils.getUIIndexRowKey(index.getPropertyID(), index.getDate(), index.getValue());
+
+          Mutation mutation = null;
           if(0 > entry.getValue()){
-            Delete delete = new Delete(row);
-            delete.deleteColumns(Constants.columnFamily.getBytes(), WriteUtils.getFiveByte(index.getUid()));
-            delete.setDurability(Durability.SKIP_WAL);
-            result.getFirst().add(delete);
+            mutation = new Delete(row);
+            ((Delete)mutation).deleteColumns(Constants.columnFamily.getBytes(), WriteUtils.getFiveByte(index.getUid()));
           }else if (0 < entry.getValue()){
-            Put put = new Put(row);
-            put.setDurability(Durability.SKIP_WAL);
-            put.add(Constants.columnFamily.getBytes(), WriteUtils.getFiveByte(index.getUid()),Bytes.toBytes("0"));
-            result.getSecond().add(put);
+            mutation = new Put(row);
+            ((Put)mutation).add(Constants.columnFamily.getBytes(), WriteUtils.getFiveByte(index.getUid()),Bytes.toBytes("0"));
+          }
+
+          if (mutation != null) {
+              mutation.setDurability(Durability.SKIP_WAL);
+              if (currentSize < 2000) {
+                List<Mutation> operations = result.get(i);
+                operations.add(mutation);
+                currentSize++;
+              } else {
+                List<Mutation> operations = new ArrayList<Mutation>();
+                operations.add(mutation);
+                result.add(operations);
+                i++;
+                currentSize = 0;
+              }
           }
         }
      }catch(Exception e){

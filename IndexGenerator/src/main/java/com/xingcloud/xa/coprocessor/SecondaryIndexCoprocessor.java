@@ -14,11 +14,8 @@ import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.coprocessor.BaseRegionObserver;
 import org.apache.hadoop.hbase.coprocessor.ObserverContext;
 import org.apache.hadoop.hbase.coprocessor.RegionCoprocessorEnvironment;
-import org.apache.hadoop.hbase.protobuf.ProtobufUtil;
-import org.apache.hadoop.hbase.protobuf.RequestConverter;
-import org.apache.hadoop.hbase.protobuf.generated.ClientProtos;
+import org.apache.hadoop.hbase.regionserver.HRegion;
 import org.apache.hadoop.hbase.regionserver.HRegionServer;
-import org.apache.hadoop.hbase.regionserver.HRegionServerRegister;
 import org.apache.hadoop.hbase.regionserver.wal.WALEdit;
 import org.apache.hadoop.hbase.util.Bytes;
 
@@ -51,7 +48,9 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
             final WALEdit edit,
             final Durability durability)
             throws IOException {
-        byte[] table  = observerContext.getEnvironment().getRegion().getRegionInfo().getTableName();
+        HRegion region = observerContext.getEnvironment().getRegion();
+        byte[] table  = region.getRegionInfo().getTableName();
+
         String tableName = Bytes.toString(table);
 
         if(!tableName.startsWith("properties_") || tableName.endsWith("_index")){
@@ -60,8 +59,6 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
 
         String[] fields = tableName.split("_");
         String projectID = fields[1];
-
-        HTableInterface dataTable = observerContext.getEnvironment().getTable(table);
 
         List<byte[]> qualifierList = new ArrayList<byte[]>();
         //Cache KV in puts
@@ -84,10 +81,9 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         //Get old values which related to the qualifier
         KeyValue[] oldValues = null;
         try {
-            oldValues = getValue(observerContext.getEnvironment().getRegion().getRegionName(), put.getRow(), qualifierList);
+            oldValues = getValue(region, put.getRow(), qualifierList);
         } catch (ServiceException e) {
-            e.printStackTrace();
-            LOG.error(e.getMessage());
+            LOG.error(e.getMessage(), e);
             return;
         }
 
@@ -144,24 +140,18 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
             submitIndexJob(projectID, false, put.getRow(), qualifier, null, kv.getValue(), ts);
         }
 
-        dataTable.close();
     }
 
-    private KeyValue[] getValue(byte[] regionName, byte[] uid, List<byte[]> qualifierList) throws IOException, ServiceException {
+    private KeyValue[] getValue(HRegion region, byte[] uid, List<byte[]> qualifierList) throws IOException, ServiceException {
         Get get = new Get(uid);
         for (byte[] qualifier : qualifierList) {
             get.addColumn(CF_NAME, qualifier);
         }
-        ClientProtos.GetRequest request = RequestConverter.buildGetRequest(regionName, get);
-        ClientProtos.GetResponse response = HRegionServerRegister.getLast().get(null, request);
-
-        if (response == null) return null;
-        Result result = ProtobufUtil.toResult(response.getResult());
-
-        if(result.isEmpty()){
+        Result r = region.get(get);
+        if(r.isEmpty()){
             return null;
         } else {
-            return result.raw();
+            return r.raw();
         }
     }
 

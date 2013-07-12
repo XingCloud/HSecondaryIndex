@@ -36,11 +36,6 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
 
     private static final byte[] CF_NAME = Bytes.toBytes("value");
 
-
-    @Override
-    public void start(CoprocessorEnvironment e){
-    }
-
     @Override
     public void prePut(
             final ObserverContext<RegionCoprocessorEnvironment> observerContext,
@@ -57,8 +52,8 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
             return;
         }
 
-        String[] fields = tableName.split("_");
-        String projectID = fields[1];
+
+        String projectID = tableName.substring(11);
 
         List<byte[]> qualifierList = new ArrayList<byte[]>();
         //Cache KV in puts

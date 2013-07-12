@@ -295,7 +295,7 @@ public abstract class Tail {
             boolean append = true;
             this.processStream = new FileWriter(process, append);
         }
-        this.processStream.write(day + "\t" + line + "\t" + new Date() + "\t" + (line-lastLine)/((System.nanoTime()-st)*1.0e9) + "\n");
+        this.processStream.write(day + "\t" + line + "\t" + new Date() + "\t" + (line-lastLine)/((System.nanoTime()-st)/1.0e9) + "\n");
         this.processStream.flush();
     }
 

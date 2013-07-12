@@ -4,13 +4,14 @@ import com.xingcloud.xa.secondaryindex.tail.BufferedTailReader;
 import com.xingcloud.xa.secondaryindex.utils.TimeUtil;
 
 import java.io.*;
+import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 
 public abstract class Tail {
-
+    private static DecimalFormat df = new DecimalFormat("#.00");
 
     /**
      * /data/log/stream.log projectid \t inneruid \t eventStr \t value \t
@@ -88,10 +89,9 @@ public abstract class Tail {
         long count = 0;
         long allSentLog = jumpln;
         long st = System.nanoTime();
-        long lastLine = 0;
+        long lastLine = allSentLog;
         try {
             while (true) {
-
                 String line = reader.readLine();
                 if (line == null) {
                     if (pool.size() > 0) {
@@ -215,7 +215,7 @@ public abstract class Tail {
     static final String PROP_DAY = "day";
 
     private int batchSize = 1000;
-    private long nologSleepTime = 20*1000L;
+    private long nologSleepTime = 10*1000L;
     private boolean logProcessPerBatch = false;
 
     protected String datadir = "/data/log/";
@@ -289,13 +289,12 @@ public abstract class Tail {
     }
 
     public void writeProcess(long day, long line, long lastLine, long st) throws IOException {
-
         if (this.processStream == null) {
             File process = new File(this.configPath + File.separator + this.sendlogprocess);
             boolean append = true;
             this.processStream = new FileWriter(process, append);
         }
-        this.processStream.write(day + "\t" + line + "\t" + new Date() + "\t" + lastLine + "\t" + (System.nanoTime()-st)/1.0e9 + "\t" + (line-lastLine)/((System.nanoTime()-st)/1.0e9) + "/s\n");
+        this.processStream.write(day + "\t" + line + "\t" + new Date() + "\t" + (System.nanoTime()-st)/1.0e9 + "\t" + df.format((line-lastLine)/((System.nanoTime()-st)/1.0e9)) + "/s\n");
         this.processStream.flush();
     }
 

@@ -63,7 +63,6 @@ public abstract class Tail {
     }
 
     public void tail() throws Exception {
-
         String fileName = this.getLogDataFile(this.day);
         long jumpln = this.line;
         // 实现一个tail 并滚动到新的文件
@@ -88,6 +87,8 @@ public abstract class Tail {
         }
         long count = 0;
         long allSentLog = jumpln;
+        long st = System.nanoTime();
+        long lastLine = 0;
         try {
             while (true) {
 
@@ -95,11 +96,11 @@ public abstract class Tail {
                 if (line == null) {
                     if (pool.size() > 0) {
                         int ksize = pool.size();
-                        this.sendLog(pool, allSentLog);
+                        this.sendLog(pool, allSentLog, lastLine, st);
                         allSentLog += ksize;
                         pool.clear();
-                        this.writeProcess(this.day, allSentLog);
-
+                        this.writeProcess(this.day, allSentLog, lastLine, st);
+                        lastLine = allSentLog;
                     }
                     if (this.hasNextLogDataFile()) {
                         //存在新的日志文件
@@ -107,6 +108,7 @@ public abstract class Tail {
                     }
                   
                     Thread.sleep(sleepTime);
+                    st = System.nanoTime();
                 } else {
                     //如果readline拿到的line不是以\n结尾，说明这一行没有读完整；继续读直到出现\n的line，合成一行
                     StringBuffer bufferSb = null;
@@ -129,20 +131,22 @@ public abstract class Tail {
                     if (pool.size() >= size) {
                         // rpc send
                         int ksize = pool.size();
-                        this.sendLog(pool, allSentLog);
+                        this.sendLog(pool, allSentLog, lastLine, st);
                         allSentLog += ksize;
                         //如果是userlog当天log的最后一条，sendprocess里面的记录行数要+1，保证重启时这一行会被略过
                         pool.clear();
 
                         if (this.isLogProcessPerBatch()) {
-                            this.writeProcess(this.day, allSentLog);
+                            this.writeProcess(this.day, allSentLog, lastLine, st);
                         } else {
                             count++;
                             if (count >= 100) {
-                                this.writeProcess(this.day, allSentLog);
+                                this.writeProcess(this.day, allSentLog, lastLine, st);
                                 count = 0;
                             }
                         }
+                        lastLine = allSentLog;
+                        st = System.nanoTime();
                     }
                 }
             }
@@ -151,11 +155,11 @@ public abstract class Tail {
             e.printStackTrace();
         } finally {
             int ksize = pool.size();
-            this.sendLog(pool, allSentLog);
+            this.sendLog(pool, allSentLog, lastLine, st);
             allSentLog += ksize;
             pool.clear();
 
-            this.writeProcess(this.day, allSentLog);
+            this.writeProcess(this.day, allSentLog, lastLine, st);
             reader.close();
         }
 
@@ -170,7 +174,7 @@ public abstract class Tail {
      * @param logs
      * @return
      */
-    public void sendLog(List<String> logs, long alreadySentLog) {
+    public void sendLog(List<String> logs, long alreadySentLog, long lastLine, long st) {
         while (true) {
             try {
                 this.send(logs, this.day);
@@ -178,7 +182,7 @@ public abstract class Tail {
                 e.printStackTrace();
                 // 休息
                 try {
-                    this.writeProcess(this.day, alreadySentLog);
+                    this.writeProcess(this.day, alreadySentLog, lastLine, st);
                     System.out.println(new Date() + " send exception,then will sleep 15s");
                     Thread.sleep(15000L);
                 } catch (Throwable e1) {
@@ -284,14 +288,14 @@ public abstract class Tail {
 
     }
 
-    public void writeProcess(long day, long line) throws IOException {
+    public void writeProcess(long day, long line, long lastLine, long st) throws IOException {
 
         if (this.processStream == null) {
             File process = new File(this.configPath + File.separator + this.sendlogprocess);
             boolean append = true;
             this.processStream = new FileWriter(process, append);
         }
-        this.processStream.write(day + "\t" + line + "\t" + new Date() + "\n");
+        this.processStream.write(day + "\t" + line + "\t" + new Date() + "\t" + (lastLine-st)/((System.nanoTime()-st)*1.0e9) + "\n");
         this.processStream.flush();
     }
 

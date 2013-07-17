@@ -30,11 +30,13 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class SecondaryIndexCoprocessor extends BaseRegionObserver {
 
+	// projectID => {propertyID => UpdateFunc, ...}
     private static Map<String, Map<Integer, UpdateFunc>> metaInfo = new ConcurrentHashMap<String, Map<Integer, UpdateFunc>>();
     private static Log INDEX_LOG = LogFactory.getLog(SecondaryIndexCoprocessor.class);
     private static Log LOG = LogFactory.getLog(HRegionServer.class);
 
     private static final byte[] CF_NAME = Bytes.toBytes("value");
+	private static final String PROPERTY_TABLE_PREFIX = "properties_";
 
     @Override
     public void prePut(
@@ -48,12 +50,12 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
 
         String tableName = Bytes.toString(table);
 
-        if(!tableName.startsWith("properties_") || tableName.endsWith("_index")){
+        if(!tableName.startsWith(PROPERTY_TABLE_PREFIX) || tableName.endsWith("_index")){
             return;
         }
 
 
-        String projectID = tableName.substring(11);
+        String projectID = tableName.substring(PROPERTY_TABLE_PREFIX.length());
 
         List<byte[]> qualifierList = new ArrayList<byte[]>();
         //Cache KV in puts
@@ -108,7 +110,9 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
                      if (uf == UpdateFunc.cover) {
                         submitIndexJob(projectID, true, put.getRow(), qualifier, oldValue, newValue, ts);
                      }
-                } else if (uf == UpdateFunc.inc) {
+                }
+				// whether oldValue equals newValue or not
+				if (uf == UpdateFunc.inc) {
                      //Increment attribute value
                     int index = indexCache.get(qualifier);
                     cells.remove(index);
@@ -153,8 +157,7 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
     private void submitIndexJob(String projectID, boolean shouldDel, byte[] uid,
                                 int propertyID, byte[] oldValue, byte[] newValue, long ts) throws IOException {
         byte[] convertedUid = {0,0,0,0,0,0,0,0};
-        for(int i = 0; i < 5; i++)
-            convertedUid[i+3] = uid[i];
+		System.arraycopy(uid, 0, convertedUid, 3, 5);
 
         long uidL = Bytes.toLong(convertedUid);
         String oldValueStr = Bytes.toStringBinary(oldValue);

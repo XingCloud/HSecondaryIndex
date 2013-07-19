@@ -40,10 +40,10 @@ public class HPutTask implements Runnable  {
   @Override
   public void run() {
     try{
-        long s1 = System.nanoTime();
         try {
           HTableAdmin.checkTable(tableName, Constants.columnFamily); // check if table is exist, if not create it
-          
+
+		  long s1 = System.nanoTime();
           List<List<Mutation>> result = optimizePuts(indexes);
           LOG.info(tableName + " Group: " + result.size() + "\tOptimize taken: " + (System.nanoTime()-s1)/1.0e9 + " sec");
 

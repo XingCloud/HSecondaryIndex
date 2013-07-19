@@ -1,11 +1,18 @@
 package com.xingcloud.xa.importtool;
 
 import com.xingcloud.mysql.MySql_fixseqid;
+import com.xingcloud.userprops_meta_util.PropType;
+import com.xingcloud.userprops_meta_util.UserProp;
+import com.xingcloud.userprops_meta_util.UserProps_DEU_Util;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.*;
-import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.HColumnDescriptor;
+import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.io.compress.Compression;
 import org.apache.hadoop.hbase.util.Bytes;
 
@@ -31,12 +38,12 @@ public class ImportJob {
     private Configuration config;
     private HBaseAdmin admin;
     private Map<String, Boolean> tables;
-    private Map<String, Map<String, String>> properties;
-    private HTable propertyTable;
-    private int maxPropertyID = -1;
+    private Map<String, UserProp> propertiesMeta; // store a project's properties meta
     private ExecutorService executor;
-
+    private String CF="val";
+    private String PREFIX="properties_";
     private static Log LOG = LogFactory.getLog(ImportJob.class);
+  
 
     public ImportJob(Configuration config) throws IOException {
         this.config = config;
@@ -46,67 +53,45 @@ public class ImportJob {
     }
 
     public void batchStart(String baseDir, String[] pids) throws IOException, InterruptedException {
-        initTables();
-        long start = System.nanoTime();
-        for(String pid: pids){
-          this.properties = new HashMap<String, Map<String, String>>(); // init for next project
-          initProperties(pid);
-          start(baseDir, pid);
-        }
-        executor.shutdown();
-        while(!executor.isTerminated()){
-            Thread.sleep(100);
-        }
-        long end = System.nanoTime();
-        LOG.info("all done! duration: " + ((end - start) / 1000000) + "ms");
+      checkTable(admin, "meta_properties", CF);
+      initTables();
+      long start = System.nanoTime();
+      for(String pid: pids){
+        this.propertiesMeta = new HashMap<String, UserProp>(); // init for next project
+        importPropertiesMeta(pid);
+        checkTable(admin, "properties_" + pid, CF);
+        importProperties(baseDir, pid);
+      }
+      executor.shutdown();
+      while(!executor.isTerminated()){
+          Thread.sleep(100);
+      }
+      long end = System.nanoTime();
+      LOG.info("all done! duration: " + ((end - start) / 1000000) + "ms");
+    }  
+
+  public void importProperties(String baseDir, String pid) throws IOException {
+    File folder = new File(baseDir + "/" + pid);
+    for(File file: folder.listFiles()){
+        String name = file.getName();
+        int start = name.indexOf("_") + 1;
+        int end = name.indexOf(".log");
+        String property = name.substring(start, end);
+        int propertyID = propertiesMeta.get(property).getId();
+        PropType propertyType = propertiesMeta.get(property).getPropType();      
+        ImportWorker worker = new ImportWorker(config, pid, property, propertyID, propertyType, file);
+        executor.execute(worker);
+    }
     }
 
-    public void start(String baseDir, String pid) throws IOException {
-        File folder = new File(baseDir + "/" + pid);
-        for(File file: folder.listFiles()){
-            String name = file.getName();
-            int start = name.indexOf("_") + 1;
-            int end = name.indexOf(".log");
-            String property = name.substring(start, end);
-            int propertyID = getPropertyID(property);
-            String propertyType = properties.get(property).get("type");
-            checkTable(admin, "property_" + pid + "_"+ propertyID, "value");
-            ImportWorker worker = new ImportWorker(config, pid, property, propertyID, propertyType, file);
-            executor.execute(worker);
-        }
-    }
+  private void initTables() throws IOException {
+      HTableDescriptor[] tableDescriptors = admin.listTables();
+      for(HTableDescriptor tableDescriptor: tableDescriptors){
+          tables.put(tableDescriptor.getNameAsString(), true);
+      }
+  }
 
-    private void initTables() throws IOException {
-        HTableDescriptor[] tableDescriptors = admin.listTables();
-        for(HTableDescriptor tableDescriptor: tableDescriptors){
-            tables.put(tableDescriptor.getNameAsString(), true);
-        }
-    }
-
-    private void initProperties(String pid) throws IOException {
-        Scan scan = new Scan();
-        if(!tableExists(admin, "properties_"+pid)){
-            createTable(admin, "properties_"+pid, "value");
-            importProperties(pid);
-        }
-        
-        //get properties from hbase, then cache
-        propertyTable = new HTable(config, "properties_"+pid);
-        ResultScanner scanner = propertyTable.getScanner(scan);
-        for(Result row = scanner.next(); row != null; row = scanner.next()){
-            String property = Bytes.toString(row.getRow());
-            Map<String, String> meta = new HashMap<String, String>();
-            int id = Bytes.toInt(row.getValue(Bytes.toBytes("value"), Bytes.toBytes("id")));
-            String type = Bytes.toString(row.getValue(Bytes.toBytes("value"), Bytes.toBytes("type")));
-            meta.put("id", String.valueOf(id));
-            meta.put("type", type);
-            properties.put(property, meta);
-            if(id > maxPropertyID) maxPropertyID = id;
-        }
-        scanner.close();
-    }
-
-  private void importProperties(String pid) {
+  private void importPropertiesMeta(String pid) throws IOException {
     Connection conn = null;
     ResultSet rs;
     Statement statement = null;
@@ -123,11 +108,11 @@ public class ImportJob {
         String func = rs.getString("prop_func");
         String orig = rs.getString("prop_orig");
         
-        Put put = new Put(Bytes.toBytes(name));
-        put.add(Bytes.toBytes("value"), Bytes.toBytes("id"), Bytes.toBytes(i));
-        put.add(Bytes.toBytes("value"), Bytes.toBytes("type"), Bytes.toBytes(type));
-        put.add(Bytes.toBytes("value"), Bytes.toBytes("func"), Bytes.toBytes(func));
-        put.add(Bytes.toBytes("value"), Bytes.toBytes("orig"), Bytes.toBytes(orig));
+        Put put = new Put(Bytes.toBytes(pid+"_"+name));
+        put.add(Bytes.toBytes(CF), Bytes.toBytes("id"), Bytes.toBytes(i));
+        put.add(Bytes.toBytes(CF), Bytes.toBytes("type"), Bytes.toBytes(type));
+        put.add(Bytes.toBytes(CF), Bytes.toBytes("func"), Bytes.toBytes(func));
+        put.add(Bytes.toBytes(CF), Bytes.toBytes("orig"), Bytes.toBytes(orig));
 
         puts.add(put);
         i++;
@@ -155,65 +140,54 @@ public class ImportJob {
     LOG.info("properties size:"+puts.size());
     HTable table = null;
     try {
-      table = new HTable(config, "properties_" + pid);
+      table = new HTable(config, "meta_properties");
       table.put(puts);
       table.flushCommits();
     } catch (IOException e) {
       LOG.error(pid+":import properties error.");
-      e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+      e.printStackTrace();  
     }finally {
       try {
         table.close();
       } catch (IOException e) {
-        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        e.printStackTrace();
       }
+    }
+
+    List<UserProp> props = UserProps_DEU_Util.getInstance().getUserProps(pid);
+    for (UserProp up : props) {
+      propertiesMeta.put(up.getPropName(), up);
     }
   }
 
-  private int getPropertyID(String property) throws IOException {
-        if(properties.containsKey(property)){
-            return Integer.valueOf(properties.get(property).get("id"));
-        } else {
-            int id = maxPropertyID + 1;
-            Put p = new Put(Bytes.toBytes(property));
-            p.add(Bytes.toBytes("value"), Bytes.toBytes("id"), Bytes.toBytes(id));
-            propertyTable.put(p);
-            maxPropertyID++;
-            Map<String, String> meta = new HashMap<String, String>();
-            meta.put("id", String.valueOf(id));
-            properties.put(property, meta);
-            return id;
-        }
-    }
+  private boolean tableExists(String tableName) throws IOException {
+      return tables.containsKey(tableName);
+  }
 
-    private boolean tableExists(HBaseAdmin admin, String tableName) throws IOException {
-        return tables.containsKey(tableName);
+  private void createTable(HBaseAdmin admin, String tableName, String... families) throws IOException {
+    HTableDescriptor table = new HTableDescriptor(tableName);
+    for(String family: families){
+        HColumnDescriptor columnDescriptor = new HColumnDescriptor(family);
+        columnDescriptor.setMaxVersions(2000);
+        columnDescriptor.setBlocksize(512 * 1024);
+        columnDescriptor.setCompressionType(Compression.Algorithm.LZO);
+        table.addFamily(columnDescriptor);
     }
+    admin.createTable(table);
+    tables.put(tableName, true);
+  }
 
-    private void createTable(HBaseAdmin admin, String tableName, String... families) throws IOException {
-        HTableDescriptor table = new HTableDescriptor(tableName);
-        for(String family: families){
-            HColumnDescriptor columnDescriptor = new HColumnDescriptor(family);
-            columnDescriptor.setMaxVersions(2000);
-            columnDescriptor.setBlocksize(512 * 1024);
-            columnDescriptor.setCompressionType(Compression.Algorithm.LZO);
-            table.addFamily(columnDescriptor);
-        }
-        admin.createTable(table);
-        tables.put(tableName, true);
+  public void checkTable(HBaseAdmin admin, String tableName, String... families) throws IOException {
+    if(!tableExists(tableName)){
+        createTable(admin, tableName, families);
     }
-
-    public void checkTable(HBaseAdmin admin, String tableName, String... families) throws IOException {
-        if(!tableExists(admin, tableName)){
-            createTable(admin, tableName, families);
-        }
-    }
+  }
   
   public void batchRemove(String[] pids){
     for(String pid:pids){
       try {
-        admin.disableTables("property_"+pid+".*");
-        admin.deleteTables("property_"+pid+".*");
+        admin.disableTables(PREFIX+pid+".*");
+        admin.deleteTables(PREFIX+pid+".*");
       } catch (IOException e) {
         e.printStackTrace();
       }
@@ -221,13 +195,13 @@ public class ImportJob {
   }
   
   public static void main(String[] args) {
-      ImportJob importJob = null;
-      try {
-          importJob = new ImportJob(HBaseConfiguration.create());
-      } catch (IOException e) {
-          e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-      }
-      //importJob.importProperties("sof-dsk");
+    ImportJob importJob = null;
+    try {
+        importJob = new ImportJob(HBaseConfiguration.create());
+    } catch (IOException e) {
+        e.printStackTrace();  
+    }
+    //importJob.importProperties("sof-dsk");
     String[] pids = {"sof-dsk"};
     importJob.batchRemove(pids);
   }

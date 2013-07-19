@@ -1,6 +1,7 @@
 package com.xingcloud.xa.secondaryindex.utils;
 
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -15,15 +16,24 @@ public class TimeUtil {
 
     public static final TimeZone TZ = TimeZone.getTimeZone(Constants.TIMEZONE);
 
-
     public static long dayToTptime(long _day) {
-        int day = (int) _day;
-        Calendar cal = Calendar.getInstance();
-        cal.setTimeZone(TZ);
-        cal.set(day / 10000, day % 10000 / 100 - 1, day % 100, 0, 0, 0);
-        return cal.getTimeInMillis();
-    }
+		// this method should only be used by Tail class
+		SimpleDateFormat df = new SimpleDateFormat("yyyyMMdd");
+		df.setTimeZone(TZ);
+		try{
+			Date startDate = df.parse(String.valueOf(_day));
+			return startDate.getTime();
+		} catch (ParseException e){
+			e.printStackTrace();
+			return -1;
+		}
 
+//        int day = (int) _day;
+//        Calendar cal = Calendar.getInstance();
+//        cal.setTimeZone(TZ);
+//        cal.set(day / 10000, day % 10000 / 100 - 1, day % 100, 0, 0, 0);
+//        return cal.getTimeInMillis();
+    }
 
     /**
      * 把时间戳转换为数据库格式日期
@@ -77,6 +87,8 @@ public class TimeUtil {
     }
   
     public static void main(String[] args){
-      System.out.println(nextDay(20130520));
-    }
+      	System.out.println(nextDay(20130520));
+		System.out.println(dayToTptime(20130719));
+		System.out.println(dayToTptime(20130720));
+	}
 }

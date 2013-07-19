@@ -1,5 +1,6 @@
 package com.xingcloud.xa.importtool;
 
+import com.xingcloud.userprops_meta_util.PropType;
 import com.xingcloud.xa.uidmapping.UidMappingUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -22,12 +23,12 @@ public class ImportWorker implements Runnable  {
     private String pid;
     private String property;
     private int propertyID;
-    private String propertyType;
+    private PropType propertyType;
     private File logFile;
 
     private static Log LOG = LogFactory.getLog(ImportWorker.class);
 
-    public ImportWorker(Configuration config, String pid, String property, int propertyID, String propertyType, File logFile){
+    public ImportWorker(Configuration config, String pid, String property, int propertyID, PropType propertyType, File logFile){
         this.config = config;
         this.pid = pid;
         this.property = property;
@@ -41,7 +42,7 @@ public class ImportWorker implements Runnable  {
         long start = System.nanoTime();
         long count = 0;
         try {
-            HTable table = new HTable(config, "property_" + pid+"_"+propertyID);
+            HTable table = new HTable(config, "properties_" + pid);
             List<Put> puts = new ArrayList<Put>();
             InputStreamReader inputStream = new InputStreamReader(new FileInputStream(logFile));
             BufferedReader reader = new BufferedReader(inputStream);
@@ -58,9 +59,9 @@ public class ImportWorker implements Runnable  {
                 byte[] shortenUid = {uidBytes[3],uidBytes[4], uidBytes[5], uidBytes[6], uidBytes[7]};
                 Put dataPut = new Put(shortenUid);
                 if(propertyType.equals("sql_datetime") || propertyType.equals("sql_bigint")){
-                    dataPut.add(Bytes.toBytes("value"), Bytes.toBytes("value"), Bytes.toBytes(Long.parseLong(value)));
+                    dataPut.add(Bytes.toBytes("val"), Bytes.toBytes(propertyID), Bytes.toBytes(Long.parseLong(value)));
                 } else{
-                    dataPut.add(Bytes.toBytes("value"), Bytes.toBytes("value"), Bytes.toBytes(value));
+                    dataPut.add(Bytes.toBytes("val"), Bytes.toBytes(propertyID), Bytes.toBytes(value));
                 }
                 puts.add(dataPut);
                 line = reader.readLine();

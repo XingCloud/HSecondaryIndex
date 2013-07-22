@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xingcloud.xa.secondaryindex.model.Index;
 import com.xingcloud.xa.secondaryindex.tail.Tail;
 import com.xingcloud.xa.secondaryindex.utils.Constants;
+import com.xingcloud.xa.secondaryindex.utils.WriteUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -73,7 +74,6 @@ public class IndexTailer extends Tail implements Runnable{
   private Map<String, List<Index>> dispatchPuts(List<String> logs) throws IOException {
     Map<String, List<Index>> putsMap = new HashMap<String, List<Index>>();
     for(String log: logs){
-
       String[] fields = log.split("\t");
       long timestamp = Long.parseLong(fields[0]);
       long uid = Long.parseLong(fields[1]);
@@ -81,8 +81,7 @@ public class IndexTailer extends Tail implements Runnable{
       String oldValue = fields[3];
       String newValue = fields[4];
       boolean needDelete = Boolean.valueOf(fields[5]);
-      String tableName = "properties_" + fields[6] + "_index";
-
+      String tableName = WriteUtils.getUIIndexTableName(fields[6]);
       
       Index put = new Index(tableName, uid, propertyID, newValue, "put", timestamp);   
       Index delete = null;
@@ -98,13 +97,9 @@ public class IndexTailer extends Tail implements Runnable{
           putsMap.put(tableName, indexes);
       }
 
-
       if (delete != null ) indexes.add(delete);
       indexes.add(put);
-
     }  
     return putsMap;
   }
-  
-  
 }

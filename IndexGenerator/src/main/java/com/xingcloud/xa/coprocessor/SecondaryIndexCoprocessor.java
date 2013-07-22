@@ -35,7 +35,7 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
     private static Log INDEX_LOG = LogFactory.getLog(SecondaryIndexCoprocessor.class);
     private static Log LOG = LogFactory.getLog(HRegionServer.class);
 
-    private static final byte[] CF_NAME = Bytes.toBytes("value");
+    private static final byte[] CF_NAME = Bytes.toBytes("val");
 	private static final String PROPERTY_TABLE_PREFIX = "properties_";
 
     @Override

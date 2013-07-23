@@ -82,7 +82,7 @@ public class ImportJob {
         ImportWorker worker = new ImportWorker(config, pid, property, propertyID, propertyType, file);
         executor.execute(worker);
     }
-    }
+  }
 
   private void initTables() throws IOException {
       HTableDescriptor[] tableDescriptors = admin.listTables();

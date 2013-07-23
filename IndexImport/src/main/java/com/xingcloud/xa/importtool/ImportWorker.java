@@ -29,9 +29,9 @@ public class ImportWorker implements Runnable  {
     private static Log LOG = LogFactory.getLog(ImportWorker.class);
 
     public ImportWorker(Configuration config, String pid, String property, int propertyID, PropType propertyType, File logFile){
-        this.config = config;
-        this.pid = pid;
-        this.property = property;
+      this.config = config;
+      this.pid = pid;
+      this.property = property;
       this.propertyID = propertyID;
       this.propertyType = propertyType;
       this.logFile = logFile;

@@ -72,7 +72,13 @@ public class ImportJob {
 
   public void importProperties(String baseDir, String pid) throws IOException {
     File folder = new File(baseDir + "/" + pid);
-    for(File file: folder.listFiles()){
+    File[] fileList = folder.listFiles();
+    if (fileList == null){
+        LOG.error("No files found in directory: " + folder);
+        return;
+    }
+
+    for(File file: fileList){
         String name = file.getName();
         int start = name.indexOf("_") + 1;
         int end = name.indexOf(".log");

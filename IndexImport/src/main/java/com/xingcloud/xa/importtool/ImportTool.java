@@ -11,23 +11,32 @@ import java.io.IOException;
  * Time: 下午5:02
  */
 public class ImportTool {
+
     public static void main(String[] args) {
-        if(args.length <= 1) return;
+        if(args.length <= 1) {
+            System.err.println("Incorrect args.");
+            System.out.println("Usage:\n" +
+                    "\tjava -jar IndexImport-1.0-jar-with-dependencies.jar remove projectID1 projectID2 ...\n" +
+                    "\tjava -jar IndexImport-1.0-jar-with-dependencies.jar dataDirImportFrom  projectID1 projectID2 ." +
+                    "..");
+            return;
+        }
+
         Configuration config = HBaseConfiguration.create();
         try {
-            String baseDir = args[0];
             String[] pids = new String[args.length - 1];
-            for(int i = 1; i < args.length; i++){
-                pids[i - 1] = args[i];
+            System.arraycopy(args, 1, pids, 0, args.length - 1);
+
+            if(args[0].equals("remove")){
+                new ImportJob(config).batchRemove(pids);
+            }else{
+                new ImportJob(config).batchStart(args[0], pids);
             }
-          if(args[0].equals("remove")){
-            new ImportJob(config).batchRemove(pids);
-          }else{
-            new ImportJob(config).batchStart(baseDir, pids);
-          }
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             e.printStackTrace();
-        } catch (InterruptedException e) {
+        }
+        catch (InterruptedException e) {
             e.printStackTrace();
         }
     }

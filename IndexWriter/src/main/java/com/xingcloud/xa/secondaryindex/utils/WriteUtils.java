@@ -20,7 +20,7 @@ public class WriteUtils {
 
     private static long BYTES_4 = 0xffffffffl;
 
-  public static byte[] getFiveByte(long suid) {
+    public static byte[] getFiveByte(long suid) {
         byte[] rk = new byte[5];
         rk[0] = (byte) (suid>>32 & 0xff);
         rk[1] = (byte) (suid>>24 & 0xff);
@@ -35,7 +35,7 @@ public class WriteUtils {
     }
 
     public static String getUIIndexTableName(String pID) {
-        return pID + "_index";//todo wcl
+        return "properties_" + pID + "_index";
     }
   
     public static byte[] bytesCombine(byte[]... bytesArrays){

@@ -1,6 +1,5 @@
 package com.xingcloud.xa.secondaryindex;
 
-import com.xingcloud.xa.secondaryindex.manager.HBaseResourceManager;
 import com.xingcloud.xa.secondaryindex.model.Index;
 import com.xingcloud.xa.secondaryindex.pool.ThreadPool;
 import com.xingcloud.xa.secondaryindex.utils.Constants;
@@ -10,7 +9,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hadoop.hbase.util.Pair;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,10 +38,10 @@ public class HPutTask implements Runnable  {
   @Override
   public void run() {
     try{
-        long s1 = System.nanoTime();
         try {
-          HTableAdmin.checkTable(tableName, Constants.columnFamily); // check if table is exist, if not create it
-          
+          HTableAdmin.checkTable(tableName, Constants.COLUMN_FAMILY); // check if table is exist, if not create it
+
+		  long s1 = System.nanoTime();
           List<List<Mutation>> result = optimizePuts(indexes);
           LOG.info(tableName + " Group: " + result.size() + "\tOptimize taken: " + (System.nanoTime()-s1)/1.0e9 + " sec");
 
@@ -113,10 +111,10 @@ public class HPutTask implements Runnable  {
           Mutation mutation = null;
           if(0 > entry.getValue()){
             mutation = new Delete(row);
-            ((Delete)mutation).deleteColumns(Constants.columnFamily.getBytes(), WriteUtils.getFiveByte(index.getUid()));
+            ((Delete)mutation).deleteColumns(Constants.COLUMN_FAMILY.getBytes(), WriteUtils.getFiveByte(index.getUid()));
           }else if (0 < entry.getValue()){
             mutation = new Put(row);
-            ((Put)mutation).add(Constants.columnFamily.getBytes(), WriteUtils.getFiveByte(index.getUid()),Bytes.toBytes("0"));
+            ((Put)mutation).add(Constants.COLUMN_FAMILY.getBytes(), WriteUtils.getFiveByte(index.getUid()),Bytes.toBytes("0"));
           }
 
           if (mutation != null) {

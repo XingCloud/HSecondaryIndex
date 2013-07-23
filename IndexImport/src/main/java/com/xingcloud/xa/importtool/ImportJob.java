@@ -53,8 +53,8 @@ public class ImportJob {
     }
 
     public void batchStart(String baseDir, String[] pids) throws IOException, InterruptedException {
-      checkTable(admin, "meta_properties", CF);
       initTables();
+      checkTable(admin, "meta_properties", CF);
       long start = System.nanoTime();
       for(String pid: pids){
         this.propertiesMeta = new HashMap<String, UserProp>(); // init for next project

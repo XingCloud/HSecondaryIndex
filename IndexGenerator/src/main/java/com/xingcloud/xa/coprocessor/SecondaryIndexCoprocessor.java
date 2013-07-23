@@ -35,7 +35,7 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
     private static Log INDEX_LOG = LogFactory.getLog(SecondaryIndexCoprocessor.class);
     private static Log LOG = LogFactory.getLog(HRegionServer.class);
 
-    private static final byte[] CF_NAME = Bytes.toBytes("value");
+    private static final byte[] CF_NAME = Bytes.toBytes("val");
 	private static final String PROPERTY_TABLE_PREFIX = "properties_";
 
     @Override
@@ -174,14 +174,10 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
             LOG.info("Scan property table finished. Property number: " +  props.size() + "Taken: " + (System.nanoTime()-st)/1.0e9 + " sec");
             metaMap = new HashMap<Integer, UpdateFunc>();
             for (UserProp up : props) {
-                int id = up.getId();
-                UpdateFunc uf = up.getPropFunc();
-                metaMap.put(id, uf);
+                metaMap.put(up.getId(), up.getPropFunc());
             }
             metaInfo.put(projectID, metaMap);
         }
         return metaMap;
     }
-
-
 }

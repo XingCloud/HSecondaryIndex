@@ -78,6 +78,7 @@ public class HTableAdmin {
   }
 
   private static void createTable(String tableName, String... families) throws IOException {
+    // this method is only for creating index table
     LOG.info("Begin to create table " + tableName);
     HTableDescriptor table = new HTableDescriptor(tableName);
     for(String family: families){

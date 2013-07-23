@@ -8,7 +8,7 @@
     <version>1.0</version>
   </parent>
 
-	<groupId>com.xingcloud.xa</groupId>
+	<!--<groupId>com.xingcloud.xa</groupId>-->
 	<artifactId>IndexGenerator</artifactId>
 	<version>1.0</version>
 

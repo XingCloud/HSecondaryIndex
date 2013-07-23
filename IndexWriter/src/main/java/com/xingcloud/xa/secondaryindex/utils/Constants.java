@@ -17,7 +17,7 @@ public class Constants {
 
   public static final int USER_ITEM_NUM = 3;
 
-  public static final String columnFamily = "value";
+  public static final String COLUMN_FAMILY = "val";
 
   public static boolean deuTableWalSwitch = false;
 

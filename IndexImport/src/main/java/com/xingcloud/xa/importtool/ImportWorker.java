@@ -47,7 +47,7 @@ public class ImportWorker implements Runnable  {
             InputStreamReader inputStream = new InputStreamReader(new FileInputStream(logFile));
             BufferedReader reader = new BufferedReader(inputStream);
 
-            System.out.printf("Importing property: %s", property);
+            System.out.printf("Importing property: %s...\n", property);
             long batchStartTime = System.currentTimeMillis();
 
             String line = reader.readLine();
@@ -73,7 +73,7 @@ public class ImportWorker implements Runnable  {
                 if(puts.size() == 10000 || line == null){
                     table.put(puts);
                     long batchEndTime = System.currentTimeMillis();
-                    System.out.printf("Puts size: %d, Time cost: %d seconds", puts.size(),
+                    System.out.printf("Puts size: %d, Time cost: %d seconds\n", puts.size(),
                             (batchEndTime - batchStartTime) / 1000);
                     batchStartTime = batchEndTime;
                     puts.clear();

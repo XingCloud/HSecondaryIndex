@@ -14,6 +14,8 @@ import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.io.compress.Compression;
+import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding;
+import org.apache.hadoop.hbase.regionserver.BloomType;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.File;
@@ -178,8 +180,9 @@ public class ImportJob {
     for(String family: families){
         HColumnDescriptor columnDescriptor = new HColumnDescriptor(family);
         columnDescriptor.setMaxVersions(2000);
-        columnDescriptor.setBlocksize(512 * 1024);
         columnDescriptor.setCompressionType(Compression.Algorithm.LZO);
+        columnDescriptor.setDataBlockEncoding(DataBlockEncoding.PREFIX_TREE);
+        columnDescriptor.setBloomFilterType(BloomType.ROWCOL);
         table.addFamily(columnDescriptor);
     }
     admin.createTable(table);
@@ -196,7 +199,7 @@ public class ImportJob {
     for(String pid:pids){
       try {
         LOG.info("disable tables...");
-        admin.disableTables(PREFIX+pid+".*");
+        admin.disableTables(PREFIX + pid + ".*");
         LOG.info("drop tables...");
         admin.deleteTables(PREFIX+pid+".*");
       } catch (IOException e) {

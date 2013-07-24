@@ -32,10 +32,10 @@ public class HBaseOperationTask implements Callable<Integer>{
 
     @Override
     public Integer call() {
-        long st = System.nanoTime();
         boolean successful = true;
         long tryNum = 0;
         while (true) {
+          long st = System.nanoTime();
           HTableInterface ht = null;
           try {
               ht = HBaseResourceManager.getInstance().getTable(tableName);

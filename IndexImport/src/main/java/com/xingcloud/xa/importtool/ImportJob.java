@@ -161,9 +161,12 @@ public class ImportJob {
     }
 
     List<UserProp> props = UserProps_DEU_Util.getInstance().getUserProps(pid);
+    System.out.printf("Project: %s, Properties: \n", pid);
     for (UserProp up : props) {
+      System.out.printf("%s  ", up.getPropName());
       propertiesMeta.put(up.getPropName(), up);
     }
+    System.out.printf("\n");
   }
 
   private boolean tableExists(String tableName) throws IOException {

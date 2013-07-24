@@ -46,6 +46,10 @@ public class ImportWorker implements Runnable  {
             List<Put> puts = new ArrayList<Put>();
             InputStreamReader inputStream = new InputStreamReader(new FileInputStream(logFile));
             BufferedReader reader = new BufferedReader(inputStream);
+
+            System.out.printf("Importing property: %s", property);
+            long batchStartTime = System.currentTimeMillis();
+
             String line = reader.readLine();
             while(line != null){
                 String[] words = line.split("\t");
@@ -53,6 +57,7 @@ public class ImportWorker implements Runnable  {
                     line = reader.readLine();
                     continue;
                 }
+
                 long uid = Long.parseLong(words[0]);
                 String value = words[1];
                 byte[] uidBytes = Bytes.toBytes(uid);
@@ -67,6 +72,10 @@ public class ImportWorker implements Runnable  {
                 line = reader.readLine();
                 if(puts.size() == 10000 || line == null){
                     table.put(puts);
+                    long batchEndTime = System.currentTimeMillis();
+                    System.out.printf("Puts size: %d, Time cost: %d seconds", puts.size(),
+                            (batchEndTime - batchStartTime) / 1000);
+                    batchStartTime = batchEndTime;
                     puts.clear();
                 }
                 count++;

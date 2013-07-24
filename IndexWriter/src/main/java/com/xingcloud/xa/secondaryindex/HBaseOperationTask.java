@@ -21,6 +21,7 @@ import java.util.concurrent.Callable;
 public class HBaseOperationTask implements Callable<Integer>{
     private static Log LOG = LogFactory.getLog(HBaseOperationTask.class);
 
+    private static final long SLEEP_TIME = 60*1000;
     private List<Mutation> operations;
     private String tableName;
 
@@ -32,20 +33,35 @@ public class HBaseOperationTask implements Callable<Integer>{
     @Override
     public Integer call() {
         long st = System.nanoTime();
-        HTableInterface ht = null;
-        try {
-            ht = HBaseResourceManager.getInstance().getTable(tableName);
-            ht.batch(operations);
-            LOG.info(tableName + " put " + operations.size() + " records. Taken: " + (System.nanoTime()-st)/1.0e9 + " sec");
-        } catch (Exception e) {
-            LOG.error(e.getMessage() + "\n" + e.getStackTrace().toString());
-            return -1;
-        } finally {
+        boolean successful = true;
+        long tryNum = 0;
+        while (true) {
+          HTableInterface ht = null;
+          try {
+              ht = HBaseResourceManager.getInstance().getTable(tableName);
+              ht.setWriteBufferSize(Constants.WRITE_BUFFER_SIZE);
+              ht.batch(operations);
+              LOG.info(tableName + " put " + operations.size() + " records. Taken: " + (System.nanoTime()-st)/1.0e9 + " sec");
+          } catch (Exception e) {
+              LOG.error(e.getMessage() + "\n" + e.getStackTrace().toString());
+              successful = false;
             try {
-                HBaseResourceManager.getInstance().putTable(ht);
-            } catch (IOException e) {
-                LOG.error(e.getMessage(), e);
+              LOG.info("HBase is not available. Sleep and retry... Try number: " + ++tryNum);
+              Thread.sleep(SLEEP_TIME);
+            } catch (InterruptedException e1) {
+              LOG.error("Sleep interrupted! Index update should redo.");
+              return -1;
             }
+          } finally {
+              try {
+                  HBaseResourceManager.getInstance().putTable(ht);
+              } catch (IOException e) {
+                  LOG.error(e.getMessage(), e);
+              }
+          }
+          if (successful) {
+            break;
+          }
         }
         return 1;
     }

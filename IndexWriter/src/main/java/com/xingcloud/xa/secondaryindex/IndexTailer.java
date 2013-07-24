@@ -40,7 +40,7 @@ public class IndexTailer extends Tail implements Runnable{
       Map<String, List<Index>> putsMap =  dispatchPuts(logs);
       ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(Constants.EXECUTOR_THREAD_COUNT,
         Constants.EXECUTOR_THREAD_COUNT,
-        30,
+        Integer.MAX_VALUE,
         TimeUnit.MINUTES,
         new LinkedBlockingQueue<Runnable>());
       

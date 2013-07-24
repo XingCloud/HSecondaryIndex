@@ -18,7 +18,7 @@ public class ThreadPool {
     private static Log logger = LogFactory.getLog(ThreadPool.class);
     private ThreadPoolExecutor executor;
     private int DEFAULT_THREAD_NUM = 20;
-    private long TIMEOUT = 30;
+    private long TIMEOUT = Integer.MAX_VALUE;
     private boolean isShutDown = false;
 
     private static ThreadPool m_instance;
@@ -58,7 +58,7 @@ public class ThreadPool {
                     try {
                         executor.shutdownNow();
                     } catch (Exception e) {
-                        logger.error("Thread pool remain batch put tasks' time out of time for 30 seconds.", e);
+                        logger.error("Thread pool remain batch put tasks' time out of time for " + TIMEOUT + " seconds.", e);
                     }
                 }
             } catch (InterruptedException e) {

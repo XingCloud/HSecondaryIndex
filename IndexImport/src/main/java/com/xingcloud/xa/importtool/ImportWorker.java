@@ -5,6 +5,7 @@ import com.xingcloud.xa.uidmapping.UidMappingUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.client.Durability;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Row;
@@ -63,6 +64,7 @@ public class ImportWorker implements Runnable  {
                 byte[] uidBytes = Bytes.toBytes(uid);
                 byte[] shortenUid = {uidBytes[3],uidBytes[4], uidBytes[5], uidBytes[6], uidBytes[7]};
                 Put dataPut = new Put(shortenUid);
+                dataPut.setDurability(Durability.SKIP_WAL);
                 if(propertyType == PropType.sql_datetime || propertyType == PropType.sql_bigint) {
                     dataPut.add(Bytes.toBytes("val"), Bytes.toBytes(propertyID), Bytes.toBytes(Long.parseLong(value)));
                 } else{

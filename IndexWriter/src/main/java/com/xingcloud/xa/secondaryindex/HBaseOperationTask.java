@@ -32,16 +32,17 @@ public class HBaseOperationTask implements Callable<Integer>{
 
     @Override
     public Integer call() {
-        boolean successful = true;
+        boolean successful;
         long tryNum = 0;
         while (true) {
+          successful = true;
           long st = System.nanoTime();
           HTableInterface ht = null;
           try {
               ht = HBaseResourceManager.getInstance().getTable(tableName);
-              ht.setWriteBufferSize(Constants.WRITE_BUFFER_SIZE);
               ht.batch(operations);
               LOG.info(tableName + " put " + operations.size() + " records. Taken: " + (System.nanoTime()-st)/1.0e9 + " sec");
+
           } catch (Exception e) {
               LOG.error(e.getMessage() + "\n" + e.getStackTrace().toString());
               successful = false;

@@ -7,6 +7,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Row;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.*;
@@ -43,12 +44,11 @@ public class ImportWorker implements Runnable  {
         long count = 0;
         try {
             HTable table = new HTable(config, "properties_" + pid);
-            List<Put> puts = new ArrayList<Put>();
+            List<Row> puts = new ArrayList<Row>();
             InputStreamReader inputStream = new InputStreamReader(new FileInputStream(logFile));
             BufferedReader reader = new BufferedReader(inputStream);
 
-            System.out.printf("Importing property: %s...\n", property);
-            long batchStartTime = System.currentTimeMillis();
+            LOG.info("Importing property: " + property);
 
             String line = reader.readLine();
             while(line != null){
@@ -63,7 +63,7 @@ public class ImportWorker implements Runnable  {
                 byte[] uidBytes = Bytes.toBytes(uid);
                 byte[] shortenUid = {uidBytes[3],uidBytes[4], uidBytes[5], uidBytes[6], uidBytes[7]};
                 Put dataPut = new Put(shortenUid);
-                if(propertyType.equals("sql_datetime") || propertyType.equals("sql_bigint")){
+                if(propertyType == PropType.sql_datetime || propertyType == PropType.sql_bigint) {
                     dataPut.add(Bytes.toBytes("val"), Bytes.toBytes(propertyID), Bytes.toBytes(Long.parseLong(value)));
                 } else{
                     dataPut.add(Bytes.toBytes("val"), Bytes.toBytes(propertyID), Bytes.toBytes(value));
@@ -71,11 +71,14 @@ public class ImportWorker implements Runnable  {
                 puts.add(dataPut);
                 line = reader.readLine();
                 if(puts.size() == 10000 || line == null){
-                    table.put(puts);
+                    long batchStartTime = System.currentTimeMillis();
+
+                    table.batch(puts);
+
                     long batchEndTime = System.currentTimeMillis();
-                    System.out.printf("Puts size: %d, Time cost: %d seconds\n", puts.size(),
-                            (batchEndTime - batchStartTime) / 1000);
-                    batchStartTime = batchEndTime;
+                    LOG.info("Puts size: " + puts.size() + " Time cost: " +
+                            (batchEndTime - batchStartTime) / 1000.0 + " seconds");
+
                     puts.clear();
                 }
                 count++;
@@ -85,6 +88,8 @@ public class ImportWorker implements Runnable  {
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
             e.printStackTrace();
         } finally {
             long end = System.nanoTime();

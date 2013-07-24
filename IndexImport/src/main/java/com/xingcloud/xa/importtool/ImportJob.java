@@ -161,9 +161,9 @@ public class ImportJob {
     }
 
     List<UserProp> props = UserProps_DEU_Util.getInstance().getUserProps(pid);
-    System.out.printf("Project: %s, Properties: \n", pid);
+    LOG.info("Project: " + pid + ", Properties:");
     for (UserProp up : props) {
-      System.out.printf("%s\n", up.getPropName());
+      LOG.info(up.getPropName());
       propertiesMeta.put(up.getPropName(), up);
     }
   }
@@ -173,6 +173,7 @@ public class ImportJob {
   }
 
   private void createTable(HBaseAdmin admin, String tableName, String... families) throws IOException {
+    LOG.info("create table: " + tableName);
     HTableDescriptor table = new HTableDescriptor(tableName);
     for(String family: families){
         HColumnDescriptor columnDescriptor = new HColumnDescriptor(family);
@@ -194,7 +195,9 @@ public class ImportJob {
   public void batchRemove(String[] pids){
     for(String pid:pids){
       try {
+        LOG.info("disable tables...");
         admin.disableTables(PREFIX+pid+".*");
+        LOG.info("drop tables...");
         admin.deleteTables(PREFIX+pid+".*");
       } catch (IOException e) {
         e.printStackTrace();

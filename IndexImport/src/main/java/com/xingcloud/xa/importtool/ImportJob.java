@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -104,7 +105,7 @@ public class ImportJob {
 
   private void importPropertiesMeta(String pid) throws IOException {
     Connection conn = null;
-    ResultSet rs;
+    ResultSet rs = null;
     Statement statement = null;
     List<Put> puts = new ArrayList<Put>();
     try{
@@ -128,24 +129,31 @@ public class ImportJob {
         puts.add(put);
         i++;
       }
-    }catch (Exception e){
+    }catch (SQLException e){
       e.printStackTrace();
       LOG.error(e.getMessage());  
     } finally {
-      try {
-        if (statement != null) {
-          statement.close();
-        }
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-      try {
-        if (conn != null) {
-          conn.close();
-        }
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
+	  if(rs != null){
+		  try{
+			  rs.close();
+		  }catch (SQLException ex){
+			  ex.printStackTrace();
+		  }
+	  }
+	  if(statement != null){
+		  try{
+			  statement.close();
+		  }catch (SQLException ex){
+			  ex.printStackTrace();
+		  }
+	  }
+	  if(conn != null){
+		  try{
+			  conn.close();
+		  }catch (SQLException ex){
+			  ex.printStackTrace();
+		  }
+	  }
     }
 
     LOG.info("properties size:"+puts.size());

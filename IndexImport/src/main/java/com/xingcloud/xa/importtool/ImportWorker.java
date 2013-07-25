@@ -1,6 +1,8 @@
 package com.xingcloud.xa.importtool;
 
 import com.xingcloud.userprops_meta_util.PropType;
+import com.xingcloud.userprops_meta_util.UpdateFunc;
+import com.xingcloud.userprops_meta_util.UserProp;
 import com.xingcloud.xa.uidmapping.UidMappingUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -23,21 +25,17 @@ import java.util.List;
 public class ImportWorker implements Runnable  {
     private Configuration config;
     private String pid;
-    private String property;
-    private int propertyID;
-    private PropType propertyType;
+    private UserProp userProp;
     private File logFile;
 
     private static final int PUT_SIZE = 4000;
 
     private static Log LOG = LogFactory.getLog(ImportWorker.class);
 
-    public ImportWorker(Configuration config, String pid, String property, int propertyID, PropType propertyType, File logFile){
+    public ImportWorker(Configuration config, String pid, UserProp userProp, File logFile){
       this.config = config;
       this.pid = pid;
-      this.property = property;
-      this.propertyID = propertyID;
-      this.propertyType = propertyType;
+      this.userProp = userProp;
       this.logFile = logFile;
     }
 
@@ -51,7 +49,13 @@ public class ImportWorker implements Runnable  {
             InputStreamReader inputStream = new InputStreamReader(new FileInputStream(logFile));
             BufferedReader reader = new BufferedReader(inputStream);
 
-            LOG.info("Importing property: " + property);
+            LOG.info("Importing property: " + userProp.getPropName());
+
+            UpdateFunc updateFunc = userProp.getPropFunc();
+            long timestamp = TimeUtil.startTimestampOfToday();
+            if(updateFunc == UpdateFunc.once){
+                timestamp = Long.MAX_VALUE - timestamp;
+            }
 
             String line = reader.readLine();
             while(line != null){
@@ -65,13 +69,21 @@ public class ImportWorker implements Runnable  {
                 String value = words[1];
                 byte[] uidBytes = Bytes.toBytes(uid);
                 byte[] shortenUid = {uidBytes[3],uidBytes[4], uidBytes[5], uidBytes[6], uidBytes[7]};
+
                 Put dataPut = new Put(shortenUid);
                 dataPut.setDurability(Durability.SKIP_WAL);
+
+                PropType propertyType = userProp.getPropType();
+                int propertyID = userProp.getId();
+
                 if(propertyType == PropType.sql_datetime || propertyType == PropType.sql_bigint) {
-                    dataPut.add(Bytes.toBytes("val"), Bytes.toBytes(propertyID), Bytes.toBytes(Long.parseLong(value)));
+                    dataPut.add(Bytes.toBytes("val"), Bytes.toBytes(propertyID), timestamp,
+                            Bytes.toBytes(Long.parseLong(value)));
                 } else{
-                    dataPut.add(Bytes.toBytes("val"), Bytes.toBytes(propertyID), Bytes.toBytes(value));
+                    dataPut.add(Bytes.toBytes("val"), Bytes.toBytes(propertyID), timestamp,
+                            Bytes.toBytes(value));
                 }
+
                 puts.add(dataPut);
                 line = reader.readLine();
                 if(puts.size() == PUT_SIZE || line == null){
@@ -87,8 +99,10 @@ public class ImportWorker implements Runnable  {
                 }
                 count++;
             }
+
             reader.close();
             inputStream.close();
+            table.close();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -98,7 +112,8 @@ public class ImportWorker implements Runnable  {
         } finally {
             long end = System.nanoTime();
             long duration = (end - start) / 1000000;
-            LOG.info("finish import " + pid + "'s " + property + ", count: " + count + ", use: " + duration + "ms");
+            LOG.info("finish import " + pid + "'s " + userProp.getPropName() + ", count: " + count + ", " +
+                    "use: " + duration + "ms");
         }
     }
 }

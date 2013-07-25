@@ -86,10 +86,11 @@ public class ImportJob {
         String name = file.getName();
         int start = name.indexOf("_") + 1;
         int end = name.indexOf(".log");
-        String property = name.substring(start, end);
-        int propertyID = propertiesMeta.get(property).getId();
-        PropType propertyType = propertiesMeta.get(property).getPropType();      
-        ImportWorker worker = new ImportWorker(config, pid, property, propertyID, propertyType, file);
+
+        String propertyName = name.substring(start, end);
+        UserProp userProp = propertiesMeta.get(propertyName);
+
+        ImportWorker worker = new ImportWorker(config, pid, userProp, file);
         executor.execute(worker);
     }
   }

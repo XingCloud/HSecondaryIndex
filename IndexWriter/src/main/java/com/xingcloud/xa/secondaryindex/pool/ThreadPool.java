@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ThreadPool {
     private static Log logger = LogFactory.getLog(ThreadPool.class);
     private ThreadPoolExecutor executor;
-    private int DEFAULT_THREAD_NUM = 20;
+    private int DEFAULT_THREAD_NUM = 10;
     private long TIMEOUT = Integer.MAX_VALUE;
     private boolean isShutDown = false;
 

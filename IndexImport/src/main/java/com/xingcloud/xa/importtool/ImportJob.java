@@ -51,7 +51,7 @@ public class ImportJob {
         this.config = config;
         this.admin = new HBaseAdmin(config);
         this.tables = new ConcurrentHashMap<String, Boolean>();
-        this.executor = Executors.newFixedThreadPool(32);
+        this.executor = Executors.newFixedThreadPool(8);
     }
 
     public void batchStart(String baseDir, String[] pids) throws IOException, InterruptedException {

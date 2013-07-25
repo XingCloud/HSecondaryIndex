@@ -28,6 +28,8 @@ public class HPutTask implements Runnable  {
   private static final Log LOG = LogFactory.getLog(SecondaryIndexWriter.class); 
   private String tableName;
   private List<Index> indexes; //key=>every hbase node, value=>put and delete index
+
+  private static final int PUT_SIZE = 4000;
   
   public HPutTask(String tableName, List<Index> indexes){
     
@@ -78,7 +80,7 @@ public class HPutTask implements Runnable  {
   private List<List<Mutation>> optimizePuts(List<Index> indexes) {
  
       List<List<Mutation>> result = new ArrayList<List<Mutation>>();
-      List<Mutation> mutations = new ArrayList<Mutation>(2000);
+      List<Mutation> mutations = new ArrayList<Mutation>(PUT_SIZE);
       result.add(mutations);
       try{
         Map<Index, Integer> combineMap = new HashMap<Index, Integer>();
@@ -119,7 +121,7 @@ public class HPutTask implements Runnable  {
 
           if (mutation != null) {
               mutation.setDurability(Durability.SKIP_WAL);
-              if (currentSize < 2000) {
+              if (currentSize < PUT_SIZE) {
                 List<Mutation> operations = result.get(i);
                 operations.add(mutation);
                 currentSize++;
@@ -128,7 +130,7 @@ public class HPutTask implements Runnable  {
                 operations.add(mutation);
                 result.add(operations);
                 i++;
-                currentSize = 0;
+                currentSize = 1;
               }
           }
         }

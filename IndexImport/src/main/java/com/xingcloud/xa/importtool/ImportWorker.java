@@ -28,6 +28,8 @@ public class ImportWorker implements Runnable  {
     private PropType propertyType;
     private File logFile;
 
+    private static final int PUT_SIZE = 4000;
+
     private static Log LOG = LogFactory.getLog(ImportWorker.class);
 
     public ImportWorker(Configuration config, String pid, String property, int propertyID, PropType propertyType, File logFile){
@@ -72,7 +74,7 @@ public class ImportWorker implements Runnable  {
                 }
                 puts.add(dataPut);
                 line = reader.readLine();
-                if(puts.size() == 10000 || line == null){
+                if(puts.size() == PUT_SIZE || line == null){
                     long batchStartTime = System.currentTimeMillis();
 
                     table.batch(puts);

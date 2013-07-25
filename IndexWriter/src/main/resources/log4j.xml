@@ -24,10 +24,10 @@
         <appender-ref ref="WRITER" />
     </logger>
 
-    <root>
-        <priority value="info" />
-        <appender-ref ref="CONSOLE" />
-    </root>
+    <!--<root>-->
+        <!--<priority value="info" />-->
+        <!--<appender-ref ref="CONSOLE" />-->
+    <!--</root>-->
 
 
 </log4j:configuration>

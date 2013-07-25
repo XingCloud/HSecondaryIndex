@@ -1,4 +1,4 @@
-HSecordaryIndex
+HSecondaryIndex
 ===============
 
 ## IndexGenerator

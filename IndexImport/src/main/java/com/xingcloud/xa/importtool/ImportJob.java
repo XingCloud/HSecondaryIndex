@@ -42,16 +42,18 @@ public class ImportJob {
     private Map<String, Boolean> tables;
     private Map<String, UserProp> propertiesMeta; // store a project's properties meta
     private ExecutorService executor;
-    private String CF="val";
-    private String PREFIX="properties_";
+
+    private static final String  CF = "val";
+    private static final String PROPERTY_TABLE_PREFIX = "properties_";
+    private static final int POOL_SIZE = 8;
+
     private static Log LOG = LogFactory.getLog(ImportJob.class);
-  
 
     public ImportJob(Configuration config) throws IOException {
         this.config = config;
         this.admin = new HBaseAdmin(config);
         this.tables = new ConcurrentHashMap<String, Boolean>();
-        this.executor = Executors.newFixedThreadPool(8);
+        this.executor = Executors.newFixedThreadPool(POOL_SIZE);
     }
 
     public void batchStart(String baseDir, String[] pids) throws IOException, InterruptedException {
@@ -199,24 +201,13 @@ public class ImportJob {
     for(String pid:pids){
       try {
         LOG.info("disable tables...");
-        admin.disableTables(PREFIX + pid + ".*");
+        admin.disableTables(PROPERTY_TABLE_PREFIX + pid + ".*");
         LOG.info("drop tables...");
-        admin.deleteTables(PREFIX+pid+".*");
+        admin.deleteTables(PROPERTY_TABLE_PREFIX + pid + ".*");
       } catch (IOException e) {
         e.printStackTrace();
       }
     }  
   }
-  
-  public static void main(String[] args) {
-    ImportJob importJob = null;
-    try {
-        importJob = new ImportJob(HBaseConfiguration.create());
-    } catch (IOException e) {
-        e.printStackTrace();  
-    }
-    //importJob.importProperties("sof-dsk");
-    String[] pids = {"sof-dsk"};
-    importJob.batchRemove(pids);
-  }
+
 }

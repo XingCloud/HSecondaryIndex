@@ -84,7 +84,7 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
             return;
         }
 
-        Map<Integer, UpdateFunc> metaMap = getMetaInfo(projectID);
+        Map<Integer, UpdateFunc> metaMap = getMetaInfo(projectID, false);
 
         //Put attributes which already exist in table
         if (oldValues != null) {
@@ -98,7 +98,7 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
                 UpdateFunc uf = metaMap.get(qualifier);
                 if (uf == null) {
                     //Reload meta info
-                    metaMap = getMetaInfo(projectID);
+                    metaMap = getMetaInfo(projectID, true);
                     uf = metaMap.get(qualifier);
                     if (uf == null) {
                         LOG.error("Attribute: [" + qualifier + "] doesn't exist in meta table!");
@@ -134,7 +134,7 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
             UpdateFunc uf = metaMap.get(qualifier);
             if (uf == null) {
               //Reload meta info
-              metaMap = getMetaInfo(projectID);
+              metaMap = getMetaInfo(projectID, true);
               uf = metaMap.get(qualifier);
               if (uf == null) {
                 LOG.error("Attribute: [" + qualifier + "] doesn't exist in meta table!");
@@ -176,9 +176,9 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         INDEX_LOG.info(ts + "\t" + uidL + "\t" + propertyID + "\t" + oldValueStr + "\t" + newValueStr + "\t" + shouldDel + "\t" + projectID);
     }
 
-    private Map<Integer, UpdateFunc> getMetaInfo(String projectID) throws IOException {
+    private Map<Integer, UpdateFunc> getMetaInfo(String projectID, boolean force) throws IOException {
         Map<Integer, UpdateFunc> metaMap = metaInfo.get(projectID);
-        if (metaMap == null) {
+        if (metaMap == null || force) {
             long st = System.nanoTime();
             List<UserProp> props = UserProps_DEU_Util.getInstance().getUserProps(projectID);
             LOG.info("Scan property table finished. Property number: " +  props.size() + "Taken: " + (System.nanoTime()-st)/1.0e9 + " sec");

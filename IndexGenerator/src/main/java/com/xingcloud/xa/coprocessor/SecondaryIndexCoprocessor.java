@@ -132,6 +132,16 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
             int qualifier = entry.getKey();
             KeyValue kv = entry.getValue();
             UpdateFunc uf = metaMap.get(qualifier);
+            if (uf == null) {
+              //Reload meta info
+              metaMap = getMetaInfo(projectID);
+              uf = metaMap.get(qualifier);
+              if (uf == null) {
+                LOG.error("Attribute: [" + qualifier + "] doesn't exist in meta table!");
+                return;
+              }
+            }
+
             long ts = kv.getTimestamp();
             if (uf == UpdateFunc.once) {
                 ts = Long.MAX_VALUE - ts;

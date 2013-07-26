@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -42,16 +43,18 @@ public class ImportJob {
     private Map<String, Boolean> tables;
     private Map<String, UserProp> propertiesMeta; // store a project's properties meta
     private ExecutorService executor;
-    private String CF="val";
-    private String PREFIX="properties_";
+
+    private static final String  CF = "val";
+    private static final String PROPERTY_TABLE_PREFIX = "properties_";
+    private static final int POOL_SIZE = 8;
+
     private static Log LOG = LogFactory.getLog(ImportJob.class);
-  
 
     public ImportJob(Configuration config) throws IOException {
         this.config = config;
         this.admin = new HBaseAdmin(config);
         this.tables = new ConcurrentHashMap<String, Boolean>();
-        this.executor = Executors.newFixedThreadPool(8);
+        this.executor = Executors.newFixedThreadPool(POOL_SIZE);
     }
 
     public void batchStart(String baseDir, String[] pids) throws IOException, InterruptedException {
@@ -84,10 +87,11 @@ public class ImportJob {
         String name = file.getName();
         int start = name.indexOf("_") + 1;
         int end = name.indexOf(".log");
-        String property = name.substring(start, end);
-        int propertyID = propertiesMeta.get(property).getId();
-        PropType propertyType = propertiesMeta.get(property).getPropType();      
-        ImportWorker worker = new ImportWorker(config, pid, property, propertyID, propertyType, file);
+
+        String propertyName = name.substring(start, end);
+        UserProp userProp = propertiesMeta.get(propertyName);
+
+        ImportWorker worker = new ImportWorker(config, pid, userProp, file);
         executor.execute(worker);
     }
   }
@@ -101,7 +105,7 @@ public class ImportJob {
 
   private void importPropertiesMeta(String pid) throws IOException {
     Connection conn = null;
-    ResultSet rs;
+    ResultSet rs = null;
     Statement statement = null;
     List<Put> puts = new ArrayList<Put>();
     try{
@@ -125,24 +129,31 @@ public class ImportJob {
         puts.add(put);
         i++;
       }
-    }catch (Exception e){
+    }catch (SQLException e){
       e.printStackTrace();
       LOG.error(e.getMessage());  
     } finally {
-      try {
-        if (statement != null) {
-          statement.close();
-        }
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-      try {
-        if (conn != null) {
-          conn.close();
-        }
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
+	  if(rs != null){
+		  try{
+			  rs.close();
+		  }catch (SQLException ex){
+			  ex.printStackTrace();
+		  }
+	  }
+	  if(statement != null){
+		  try{
+			  statement.close();
+		  }catch (SQLException ex){
+			  ex.printStackTrace();
+		  }
+	  }
+	  if(conn != null){
+		  try{
+			  conn.close();
+		  }catch (SQLException ex){
+			  ex.printStackTrace();
+		  }
+	  }
     }
 
     LOG.info("properties size:"+puts.size());
@@ -199,24 +210,13 @@ public class ImportJob {
     for(String pid:pids){
       try {
         LOG.info("disable tables...");
-        admin.disableTables(PREFIX + pid + ".*");
+        admin.disableTables(PROPERTY_TABLE_PREFIX + pid + ".*");
         LOG.info("drop tables...");
-        admin.deleteTables(PREFIX+pid+".*");
+        admin.deleteTables(PROPERTY_TABLE_PREFIX + pid + ".*");
       } catch (IOException e) {
         e.printStackTrace();
       }
     }  
   }
-  
-  public static void main(String[] args) {
-    ImportJob importJob = null;
-    try {
-        importJob = new ImportJob(HBaseConfiguration.create());
-    } catch (IOException e) {
-        e.printStackTrace();  
-    }
-    //importJob.importProperties("sof-dsk");
-    String[] pids = {"sof-dsk"};
-    importJob.batchRemove(pids);
-  }
+
 }

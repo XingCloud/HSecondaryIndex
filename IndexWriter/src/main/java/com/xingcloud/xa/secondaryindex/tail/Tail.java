@@ -1,6 +1,5 @@
 package com.xingcloud.xa.secondaryindex.tail;
 
-import com.xingcloud.xa.secondaryindex.tail.BufferedTailReader;
 import com.xingcloud.xa.secondaryindex.utils.TimeUtil;
 
 import java.io.*;
@@ -205,7 +204,7 @@ public abstract class Tail {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        this.dayStartTime = TimeUtil.dayToTptime(this.day);
+        this.dayStartTime = TimeUtil.dayToTimestamp(this.day);
 
     }
 
@@ -265,7 +264,7 @@ public abstract class Tail {
     public void rollDay() {
         System.out.println("Now day is:"+this.day);
         this.day = TimeUtil.nextDay(this.day);
-        this.dayStartTime = TimeUtil.dayToTptime(this.day);
+        this.dayStartTime = TimeUtil.dayToTimestamp(this.day);
         System.out.println("Next day is:"+this.day);
     }
 

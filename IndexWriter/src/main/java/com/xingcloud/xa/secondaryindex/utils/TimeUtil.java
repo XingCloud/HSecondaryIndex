@@ -16,7 +16,7 @@ public class TimeUtil {
 
     public static final TimeZone TZ = TimeZone.getTimeZone(Constants.TIMEZONE);
 
-    public static long dayToTptime(long _day) {
+    public static long dayToTimestamp(long _day) {
 		// this method should only be used by Tail class
 		SimpleDateFormat df = new SimpleDateFormat("yyyyMMdd");
 		df.setTimeZone(TZ);
@@ -88,7 +88,7 @@ public class TimeUtil {
   
     public static void main(String[] args){
       	System.out.println(nextDay(20130520));
-		System.out.println(dayToTptime(20130719));
-		System.out.println(dayToTptime(20130720));
+		System.out.println(dayToTimestamp(20130719));
+		System.out.println(dayToTimestamp(20130720));
 	}
 }

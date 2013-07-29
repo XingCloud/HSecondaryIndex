@@ -11,7 +11,7 @@
     <appender name="HBASE" class="org.apache.log4j.DailyRollingFileAppender">
         <param name="File" value="/data0/log/index_importer/importer.log" />
         <param name="Append" value="true" />
-        <param name="Threshold" value="info" />
+        <param name="Threshold" value="debug" />
         <param name="DatePattern" value="'.'yyyy-MM-dd" />
         <layout class="org.apache.log4j.PatternLayout">
             <param name="ConversionPattern" value="%d{yyyyMMddHHmmss} %-5p[%t] %c{2}:

@@ -46,6 +46,7 @@ public class ImportJob {
 
     private static final String  CF = "val";
     private static final String PROPERTY_TABLE_PREFIX = "properties_";
+    private static final String INDEX_TALBE_SUFFIX = "_index";
     private static final int POOL_SIZE = 8;
 
     private static Log LOG = LogFactory.getLog(ImportJob.class);
@@ -207,16 +208,27 @@ public class ImportJob {
   }
   
   public void batchRemove(String[] pids){
-    for(String pid:pids){
-      try {
-        LOG.info("disable tables...");
-        admin.disableTables(PROPERTY_TABLE_PREFIX + pid + ".*");
-        LOG.info("drop tables...");
-        admin.deleteTables(PROPERTY_TABLE_PREFIX + pid + ".*");
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    }  
+    try{
+        initTables();
+        for(String pid: pids){
+            String propertyTableName = PROPERTY_TABLE_PREFIX + pid;
+            String indexTableName = propertyTableName + INDEX_TALBE_SUFFIX;
+
+            if(tableExists(propertyTableName)){
+                LOG.info("disable and delete table: " + propertyTableName);
+                admin.disableTable(propertyTableName);
+                admin.deleteTable(propertyTableName);
+            }
+
+            if(tableExists(indexTableName)){
+                LOG.info("disable and delete table: " + indexTableName);
+                admin.disableTable(indexTableName);
+                admin.deleteTable(indexTableName);
+            }
+        }
+    }catch (IOException ex){
+        ex.printStackTrace();
+    }
   }
 
 }

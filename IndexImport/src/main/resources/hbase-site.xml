@@ -27,7 +27,7 @@
     </property>
     <property>
         <name>hbase.ipc.cellblock.building.initial.buffersize</name>
-        <value>327680</value>
+        <value>380000</value>
     </property>
 
 </configuration>

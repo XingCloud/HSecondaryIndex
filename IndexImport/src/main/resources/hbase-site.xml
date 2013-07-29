@@ -15,7 +15,7 @@
     </property>
     <property>
         <name>hbase.client.ipc.pool.size</name>
-        <value>128</value>
+        <value>32</value>
     </property>
     <property>
         <name>hbase.client.pause</name>
@@ -25,9 +25,6 @@
         <name>hbase.ipc.client.tcpnodelay</name>
         <value>true</value>
     </property>
-    <property>
-        <name>hbase.ipc.cellblock.building.initial.buffersize</name>
-        <value>380000</value>
-    </property>
+
 
 </configuration>

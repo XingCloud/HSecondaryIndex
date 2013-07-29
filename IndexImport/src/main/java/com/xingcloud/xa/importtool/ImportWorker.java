@@ -28,7 +28,7 @@ public class ImportWorker implements Runnable  {
     private UserProp userProp;
     private File logFile;
 
-    private static final int PUT_SIZE = 4000;
+    private static final int PUT_SIZE = 10000;
 
     private static Log LOG = LogFactory.getLog(ImportWorker.class);
 

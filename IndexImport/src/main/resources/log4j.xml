@@ -13,4 +13,8 @@
         <appender-ref ref="CONSOLE" />
     </root>
 
+   <logger name="org.apache.hadoop.hbase">
+   	<level value="debug" />
+   	<appender-ref ref="CONSOLE" />
+   </logger>	
 </log4j:configuration>

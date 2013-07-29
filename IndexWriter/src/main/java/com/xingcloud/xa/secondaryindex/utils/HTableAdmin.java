@@ -11,6 +11,7 @@ import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.io.compress.Compression;
 import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding;
+import org.apache.hadoop.hbase.regionserver.BloomType;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -87,6 +88,7 @@ public class HTableAdmin {
         columnDescriptor.setMaxVersions(1);
         columnDescriptor.setBlocksize(512 * 1024);
         columnDescriptor.setCompressionType(Compression.Algorithm.LZO);
+        columnDescriptor.setBloomFilterType(BloomType.ROW);
         columnDescriptor.setDataBlockEncoding(DataBlockEncoding.PREFIX_TREE);
         table.addFamily(columnDescriptor);
     }

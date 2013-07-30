@@ -20,7 +20,7 @@
     </appender>
 
     <logger name="org.apache.hadoop.hbase">
-        <level value="debug" />
+        <level value="info" />
         <appender-ref ref="HBASE" />
     </logger>
 

@@ -34,6 +34,7 @@ public class HBaseResourceManager {
 
     private HBaseResourceManager() throws IOException {
         this.pool = new HTablePool(conf, max_size);
+        conf.set("hbase.client.pause", "15000");
     }
 
     public HTableInterface getTable(byte[] tableName) throws IOException {

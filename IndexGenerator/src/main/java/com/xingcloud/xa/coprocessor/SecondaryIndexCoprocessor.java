@@ -79,8 +79,8 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         KeyValue[] oldValues = null;
         try {
             oldValues = getValue(region, put.getRow(), qualifierList);
-        } catch (ServiceException e) {
-            LOG.error(e.getMessage(), e);
+        } catch (IOException e) {
+            LOG.error("Update index table got exception! MSG: " + e.getMessage(), e);
             return;
         }
 
@@ -151,13 +151,26 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
 
     }
 
-    private KeyValue[] getValue(HRegion region, byte[] uid, List<byte[]> qualifierList) throws IOException, ServiceException {
+    private KeyValue[] getValue(HRegion region, byte[] uid, List<byte[]> qualifierList) throws IOException {
         Get get = new Get(uid);
         for (byte[] qualifier : qualifierList) {
             get.addColumn(CF_NAME, qualifier);
         }
-        Result r = region.get(get);
-        if(r.isEmpty()){
+      Result r = null;
+      try {
+        r = region.get(get);
+      } catch (IOException e) {
+          LOG.debug("Get property value got exception. MSG: " + e.getMessage() + "\nTry get from HTable client...");
+          HTableInterface table = HBaseResourceManager.getInstance().getTable(region.getTableDesc().getNameAsString());
+          try {
+            r = table.get(get);
+          } finally {
+            if (table != null) {
+              HBaseResourceManager.getInstance().putTable(table);
+            }
+          }
+        }
+      if(r.isEmpty()){
             return null;
         } else {
             return r.raw();

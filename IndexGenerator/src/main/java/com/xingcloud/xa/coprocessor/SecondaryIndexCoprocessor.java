@@ -158,9 +158,11 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         r = region.get(get);
       } catch (IOException e) {
           LOG.debug("Get property value got exception. MSG: " + e.getMessage() + "\nTry get from HTable client...");
+          long st = System.nanoTime();
           HTableInterface table = HBaseResourceManager.getInstance().getTable(region.getTableDesc().getNameAsString());
           try {
             r = table.get(get);
+            LOG.info("------Get value successful from hbase client. Took: " + (System.nanoTime()-st)/1.0e9 + " sec");
           } finally {
             table.close();
           }

@@ -6,10 +6,7 @@ import com.xingcloud.userprops_meta_util.UserProp;
 import com.xingcloud.userprops_meta_util.UserProps_DEU_Util;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.hbase.Cell;
-import org.apache.hadoop.hbase.CoprocessorEnvironment;
-import org.apache.hadoop.hbase.KeyValue;
-import org.apache.hadoop.hbase.KeyValueUtil;
+import org.apache.hadoop.hbase.*;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.coprocessor.BaseRegionObserver;
 import org.apache.hadoop.hbase.coprocessor.ObserverContext;
@@ -161,13 +158,12 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         r = region.get(get);
       } catch (IOException e) {
           LOG.debug("Get property value got exception. MSG: " + e.getMessage() + "\nTry get from HTable client...");
-          HTableInterface table = HBaseResourceManager.getInstance().getTable(region.getTableDesc().getNameAsString());
+          HTable table = new HTable(HBaseConfiguration.create(), region.getTableDesc().getNameAsString());
           try {
+
             r = table.get(get);
           } finally {
-            if (table != null) {
-              HBaseResourceManager.getInstance().putTable(table);
-            }
+            table.close();
           }
         }
       if(r.isEmpty()){

@@ -34,7 +34,7 @@
     </property>
     <property>
         <name>hbase.client.retries.number</name>
-        <value>10</value>
+        <value>30</value>
     </property>
     <property>
         <name>hbase.ipc.client.tcpnodelay</name>

@@ -74,13 +74,7 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
 
         //Get old values which related to the qualifier
         KeyValue[] oldValues = null;
-        try {
-            oldValues = getValue(region, put.getRow(), qualifierList);
-        } catch (IOException e) {
-            LOG.error("Update index table got exception! MSG: " + e.getMessage(), e);
-            return;
-        }
-
+        oldValues = getValue(region, put.getRow(), qualifierList);
         Map<Integer, UpdateFunc> metaMap = getMetaInfo(projectID, false);
 
         //Put attributes which already exist in table
@@ -154,19 +148,8 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
             get.addColumn(CF_NAME, qualifier);
         }
       Result r = null;
-      try {
-        r = region.get(get);
-      } catch (IOException e) {
-          LOG.debug("Get property value got exception. MSG: " + e.getMessage() + "\nTry get from HTable client...");
-          long st = System.nanoTime();
-          HTableInterface table = HBaseResourceManager.getInstance().getTable(region.getTableDesc().getNameAsString());
-          try {
-            r = table.get(get);
-            LOG.info("------Get value successful from hbase client. Took: " + (System.nanoTime()-st)/1.0e9 + " sec");
-          } finally {
-            table.close();
-          }
-        }
+      r = region.get(get);
+
       if(r.isEmpty()){
             return null;
         } else {

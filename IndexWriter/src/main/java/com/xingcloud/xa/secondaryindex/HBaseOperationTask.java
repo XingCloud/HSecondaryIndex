@@ -47,20 +47,6 @@ public class HBaseOperationTask implements Callable<Integer>{
           try {
               ht = HBaseResourceManager.getInstance().getTable(tableName);
               ht.batch(operations);
-              for (Mutation mutation : operations) {
-                byte[] rk = mutation.getRow();
-                short propID = WriteUtils.getPropIDFromRK(rk);
-                Map<byte[],java.util.List<? extends org.apache.hadoop.hbase.Cell>> map = mutation.getFamilyMap();
-                for (Map.Entry<byte[], List<? extends Cell>> entry : map.entrySet()) {
-                  List<? extends Cell> cells = entry.getValue();
-                  for (Cell cell : cells) {
-                    KeyValue kv = (KeyValue)cell;
-                    long suid = WriteUtils.getSamplingUid(kv.getQualifier());
-                    LOG.info("Put: " + suid + "\t" + propID);
-                  }
-                }
-              }
-
               LOG.info(tableName + " put " + operations.size() + " records. Taken: " + (System.nanoTime()-st)/1.0e9 + " sec");
 
           } catch (Exception e) {

@@ -14,16 +14,18 @@ import java.util.TimeZone;
  * To change this template use File | Settings | File Templates.
  */
 public class Index {
+  private volatile int hashCode = 0;
+
   private String projectID;
   private long uid;
   private short propertyID;
-  private String value="";
+  private byte[] value;
   private String operation;
   private long timestamp;
 
   final int prime = 31;
 
-  public Index(String projectID, long uid, short propertyID , String value, String operation, long timestamp){
+  public Index(String projectID, long uid, short propertyID , byte[] value, String operation, long timestamp){
     this.projectID = projectID;
     this.uid = uid;
     this.propertyID = propertyID;
@@ -44,7 +46,7 @@ public class Index {
     return propertyID;
   }
 
-  public String getValue() {
+  public byte[] getValue() {
     return value;
   }
 
@@ -59,12 +61,16 @@ public class Index {
 
   @Override
   public int hashCode(){
-    int result = 1;
-    result = prime * result + projectID.hashCode();
-    result = prime * result + getDate().hashCode();
-    result = prime * result + Bytes.toBytesBinary(value).hashCode();
-    result = prime * result + projectID.hashCode();
-    result = prime * result + (int)(uid ^ (uid >>> 32));
+    int result = hashCode;
+    if (result == 0) {
+      result = 1;
+      result = prime * result + projectID.hashCode();
+      result = prime * result + (int)(timestamp ^ (timestamp >>> 32));
+      result = prime * result + value.hashCode();
+      result = prime * result + projectID.hashCode();
+      result = prime * result + (int)(uid ^ (uid >>> 32));
+      hashCode = result;
+    }
     return result;
   }
 
@@ -85,7 +91,7 @@ public class Index {
     this.propertyID = propertyID;
   }
 
-  public void setValue(String value) {
+  public void setValue(byte[] value) {
     this.value = value;
   }
 

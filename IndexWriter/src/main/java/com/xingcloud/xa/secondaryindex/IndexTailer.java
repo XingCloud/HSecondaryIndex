@@ -7,6 +7,7 @@ import com.xingcloud.xa.secondaryindex.utils.Constants;
 import com.xingcloud.xa.secondaryindex.utils.WriteUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -74,7 +75,6 @@ public class IndexTailer extends Tail implements Runnable{
   private Map<String, List<Index>> dispatchPuts(List<String> logs) throws IOException {
     Map<String, List<Index>> putsMap = new HashMap<String, List<Index>>();
     for(String log: logs){
-      LOG.info("Read:\t" + log);
       String[] fields = log.split("\t");
       long timestamp = Long.parseLong(fields[0]);
       long uid = Long.parseLong(fields[1]);
@@ -84,11 +84,11 @@ public class IndexTailer extends Tail implements Runnable{
       boolean needDelete = Boolean.valueOf(fields[5]);
       String tableName = WriteUtils.getUIIndexTableName(fields[6]);
       
-      Index put = new Index(tableName, uid, propertyID, newValue, Constants.OPERATION_PUT, timestamp);
+      Index put = new Index(tableName, uid, propertyID, Bytes.toBytesBinary(newValue), Constants.OPERATION_PUT, timestamp);
       Index delete = null;
       
       if (needDelete){
-        delete = new Index(tableName, uid, propertyID, oldValue, Constants.OPERATION_DELETE, timestamp);
+        delete = new Index(tableName, uid, propertyID, Bytes.toBytesBinary(oldValue), Constants.OPERATION_DELETE, timestamp);
       }
 
       List<Index> indexes = putsMap.get(tableName);

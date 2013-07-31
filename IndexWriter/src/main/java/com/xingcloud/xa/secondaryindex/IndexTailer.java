@@ -78,17 +78,17 @@ public class IndexTailer extends Tail implements Runnable{
       String[] fields = log.split("\t");
       long timestamp = Long.parseLong(fields[0]);
       long uid = Long.parseLong(fields[1]);
-      int propertyID = Integer.parseInt(fields[2]);
+      short propertyID = Short.parseShort(fields[2]);
       String oldValue = fields[3];
       String newValue = fields[4];
       boolean needDelete = Boolean.valueOf(fields[5]);
       String tableName = WriteUtils.getUIIndexTableName(fields[6]);
       
-      Index put = new Index(tableName, uid, propertyID, newValue, "put", timestamp);   
+      Index put = new Index(tableName, uid, propertyID, newValue, Constants.OPERATION_PUT, timestamp);
       Index delete = null;
       
       if (needDelete){
-        delete = new Index(tableName, uid, propertyID, oldValue, "delete", timestamp);    
+        delete = new Index(tableName, uid, propertyID, oldValue, Constants.OPERATION_DELETE, timestamp);
       }
 
       List<Index> indexes = putsMap.get(tableName);

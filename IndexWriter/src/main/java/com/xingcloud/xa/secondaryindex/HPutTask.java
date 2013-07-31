@@ -87,7 +87,7 @@ public class HPutTask implements Runnable  {
 
         for(Index index: indexes){
           int operation = 1;
-          if(index.getOperation().equals("delete")){
+          if(index.getOperation().equals(Constants.OPERATION_DELETE)){
             operation = -1;
           }
 
@@ -113,10 +113,10 @@ public class HPutTask implements Runnable  {
           Mutation mutation = null;
           if(0 > entry.getValue()){
             mutation = new Delete(row);
-            ((Delete)mutation).deleteColumns(Constants.COLUMN_FAMILY.getBytes(), WriteUtils.getFiveByte(index.getUid()));
+            ((Delete)mutation).deleteColumns(Constants.COLUMN_FAMILY.getBytes(), WriteUtils.getFiveBytes(index.getUid()));
           }else if (0 < entry.getValue()){
             mutation = new Put(row);
-            ((Put)mutation).add(Constants.COLUMN_FAMILY.getBytes(), WriteUtils.getFiveByte(index.getUid()),Bytes.toBytes("0"));
+            ((Put)mutation).add(Constants.COLUMN_FAMILY.getBytes(), WriteUtils.getFiveBytes(index.getUid()),Bytes.toBytes("0"));
           }
 
           if (mutation != null) {

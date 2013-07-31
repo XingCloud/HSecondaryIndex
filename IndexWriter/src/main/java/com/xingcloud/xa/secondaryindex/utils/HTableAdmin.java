@@ -14,8 +14,6 @@ import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding;
 import org.apache.hadoop.hbase.regionserver.BloomType;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -71,16 +69,16 @@ public class HTableAdmin {
         LOG.info("Add " + tableName + " to table list...");
         tables.put(tableName, true);
       }
-    LOG.info("Init tables finished.");
+      LOG.info("Init tables finished.");
     }catch (Exception e){
       e.printStackTrace();
     }
-
   }
 
   private static void createTable(String tableName, String... families) throws IOException {
     // this method is only for creating index table
-    LOG.info("Begin to create table " + tableName);
+    LOG.info("Begin to create index table " + tableName);
+
     HTableDescriptor table = new HTableDescriptor(tableName);
     for(String family: families){
       HColumnDescriptor columnDescriptor = new HColumnDescriptor(family);
@@ -92,10 +90,12 @@ public class HTableAdmin {
         columnDescriptor.setDataBlockEncoding(DataBlockEncoding.PREFIX_TREE);
         table.addFamily(columnDescriptor);
     }
+
     admin.createTable(table);
+    LOG.info("Create table " + tableName + " successfully!");
+
     tables.put(tableName, true);
     LOG.info("Add table " + tableName + " to table list. Size: " + tables.size());
-    LOG.info("Create table " + tableName + " successfully!");
   }
 
   public static void checkTable(String tableName, String... families) throws IOException {

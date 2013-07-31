@@ -3,7 +3,6 @@ package com.xingcloud.xa.importtool;
 import com.xingcloud.userprops_meta_util.PropType;
 import com.xingcloud.userprops_meta_util.UpdateFunc;
 import com.xingcloud.userprops_meta_util.UserProp;
-import com.xingcloud.xa.uidmapping.UidMappingUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -33,10 +32,10 @@ public class ImportWorker implements Runnable  {
     private static Log LOG = LogFactory.getLog(ImportWorker.class);
 
     public ImportWorker(Configuration config, String pid, UserProp userProp, File logFile){
-      this.config = config;
-      this.pid = pid;
-      this.userProp = userProp;
-      this.logFile = logFile;
+        this.config = config;
+        this.pid = pid;
+        this.userProp = userProp;
+        this.logFile = logFile;
     }
 
     @Override
@@ -61,6 +60,7 @@ public class ImportWorker implements Runnable  {
             while(line != null){
                 String[] words = line.split("\t");
                 if(words.length != 2){
+                    LOG.warn("Invalid line: " + line);
                     line = reader.readLine();
                     continue;
                 }

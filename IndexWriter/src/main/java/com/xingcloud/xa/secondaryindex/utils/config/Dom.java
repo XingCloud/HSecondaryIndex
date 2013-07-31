@@ -24,29 +24,23 @@ public class Dom {
 		return e;
 	}
 	
-	public static Dom getRoot(InputStream is)throws Exception{
-		Document doc = null;
-		try{
-			DocumentBuilder dombuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-			doc = dombuilder.parse(is);
-		}catch(Exception e){
-			e.printStackTrace();
-		}
+	public static Dom getRoot(InputStream is) throws Exception{
+        DocumentBuilder docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        Document doc = docBuilder.parse(is);
 		Element root = doc.getDocumentElement();
 		return new Dom(root);
 	}
 	
-	public static Dom getRoot(String xmlFile)throws Exception{
-		try{
-			
-			InputStream is = new FileInputStream(xmlFile);
-			Dom root = getRoot(is);
-			is.close();
-			return root;
-		}catch(Exception e){
-			e.printStackTrace();
-		}
-		return null;
+	public static Dom getRoot(String xmlFile) throws Exception{
+        InputStream is = null;
+        try{
+            is = new FileInputStream(xmlFile);
+            return getRoot(is);
+        }finally {
+            if(is != null){
+                is.close();
+            }
+        }
 	}
 	
 	public String getAttributeValue(String attributeName){

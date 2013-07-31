@@ -5,7 +5,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created with IntelliJ IDEA.
@@ -17,11 +16,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ThreadPool {
     private static Log logger = LogFactory.getLog(ThreadPool.class);
     private ThreadPoolExecutor executor;
-    private int DEFAULT_THREAD_NUM = 10;
-    private long TIMEOUT = Integer.MAX_VALUE;
+
+    private final int DEFAULT_THREAD_NUM = 10;
+    private final int TIMEOUT = Integer.MAX_VALUE;
+
     private boolean isShutDown = false;
 
-    private static ThreadPool m_instance;
+    private static ThreadPool instance;
 
     private ThreadPool() {
         logger.info("First time init batch put task pool");
@@ -33,10 +34,10 @@ public class ThreadPool {
     }
 
     public synchronized static ThreadPool getInstance() {
-        if (m_instance == null) {
-            m_instance = new ThreadPool();
+        if (instance == null) {
+            instance = new ThreadPool();
         }
-        return m_instance;
+        return instance;
     }
 
     public ThreadPoolExecutor getPool() {
@@ -58,7 +59,7 @@ public class ThreadPool {
                     try {
                         executor.shutdownNow();
                     } catch (Exception e) {
-                        logger.error("Thread pool remain batch put tasks' time out of time for " + TIMEOUT + " seconds.", e);
+                        logger.error("Thread pool remain batch put tasks' time out of time for " + TIMEOUT + " ms.", e);
                     }
                 }
             } catch (InterruptedException e) {

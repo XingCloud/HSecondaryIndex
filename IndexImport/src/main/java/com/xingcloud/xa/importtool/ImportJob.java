@@ -59,22 +59,25 @@ public class ImportJob {
     }
 
     public void batchStart(String baseDir, String[] pids) throws IOException, InterruptedException {
-      initTables();
-      checkTable(admin, "meta_properties", CF);
-      long start = System.nanoTime();
-      for(String pid: pids){
-        this.propertiesMeta = new HashMap<String, UserProp>(); // init for next project
-        importPropertiesMeta(pid);
-        checkTable(admin, "properties_" + pid, CF);
-        importProperties(baseDir, pid);
-      }
-      executor.shutdown();
-      while(!executor.isTerminated()){
+        initTables();
+        checkTable(admin, "meta_properties", CF);
+
+        long start = System.nanoTime();
+        for(String pid: pids){
+            this.propertiesMeta = new HashMap<String, UserProp>(); // init for next project
+            importPropertiesMeta(pid);
+            checkTable(admin, "properties_" + pid, CF);
+            importProperties(baseDir, pid);
+        }
+
+        executor.shutdown();
+        while(!executor.isTerminated()){
           Thread.sleep(100);
-      }
-      long end = System.nanoTime();
-      LOG.info("all done! duration: " + ((end - start) / 1000000) + "ms");
-    }  
+        }
+
+        long end = System.nanoTime();
+        LOG.info("all done! duration: " + ((end - start) / 1000000) + "ms");
+    }
 
   public void importProperties(String baseDir, String pid) throws IOException {
     File folder = new File(baseDir + "/" + pid);
@@ -109,11 +112,12 @@ public class ImportJob {
     ResultSet rs = null;
     Statement statement = null;
     List<Put> puts = new ArrayList<Put>();
+
     try{
-       conn = MySql_fixseqid.getInstance().getConnLocalNode(pid);
-       statement = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-       statement.setFetchSize(Integer.MIN_VALUE);
-       rs = statement.executeQuery("select * from sys_meta");
+      conn = MySql_fixseqid.getInstance().getConnLocalNode(pid);
+      statement = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+      statement.setFetchSize(Integer.MIN_VALUE);
+      rs = statement.executeQuery("select * from sys_meta");
       int i=0;
       while (rs.next()){
         String name = rs.getString("prop_name");
@@ -162,15 +166,16 @@ public class ImportJob {
     try {
       table = new HTable(config, "meta_properties");
       table.put(puts);
-      table.flushCommits();
     } catch (IOException e) {
-      LOG.error(pid+":import properties error.");
+      LOG.error(pid + ":import properties error.");
       e.printStackTrace();  
     }finally {
-      try {
-        table.close();
-      } catch (IOException e) {
-        e.printStackTrace();
+      if(table != null){
+        try {
+          table.close();
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
       }
     }
 
@@ -230,5 +235,4 @@ public class ImportJob {
         ex.printStackTrace();
     }
   }
-
 }

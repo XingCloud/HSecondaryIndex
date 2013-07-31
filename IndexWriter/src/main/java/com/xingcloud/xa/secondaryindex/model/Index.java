@@ -14,7 +14,6 @@ import java.util.TimeZone;
  * To change this template use File | Settings | File Templates.
  */
 public class Index {
-  private volatile int hashCode = 0;
   final int prime = 31;
 
   private String projectID;
@@ -62,16 +61,12 @@ public class Index {
 
   @Override
   public int hashCode(){
-    int result = hashCode;
-    if (result == 0) {
-      result = 1;
-      result = prime * result + projectID.hashCode();
-      result = prime * result + date.hashCode();
-      result = prime * result + value.hashCode();
-      result = prime * result + projectID.hashCode();
-      result = prime * result + (int)(uid ^ (uid >>> 32));
-      hashCode = result;
-    }
+    int result = 1;
+    result = prime * result + projectID.hashCode();
+    result = prime * result + date.hashCode();
+    result = prime * result + value.hashCode();
+    result = prime * result + projectID.hashCode();
+    result = prime * result + (int)(uid ^ (uid >>> 32));
     return result;
   }
 

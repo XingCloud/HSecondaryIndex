@@ -3,6 +3,10 @@ package com.xingcloud.xa.secondaryindex.utils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.hbase.util.Pair;
+
+import java.util.Arrays;
+
 
 /**
  * Created with IntelliJ IDEA.
@@ -48,4 +52,51 @@ public class WriteUtils {
         }
         return combinedBytes;
     }
+
+
+    public static int getInnerUid(byte[] uid) {
+        uid[0] = (byte) (uid[0] & 0);
+        return Bytes.toInt(uid);
+    }
+
+
+
+    public static int getAttrValFromIndexRK(byte[] rk) {
+        byte[] val = Arrays.copyOfRange(rk, 6, rk.length);
+        return Bytes.toInt(val);
+    }
+
+    public static String getAttrFromVal(byte[] val, boolean isLong) {
+        if (isLong) {
+            return String.valueOf(Bytes.toLong(val));
+        } else {
+            return Bytes.toString(val);
+        }
+    }
+
+    public static Pair<Long, Long> getLocalSEUidOfBucket(int bucketNum, int offsetBucket) {
+        long startBucket = offsetBucket;
+        startBucket = startBucket << 32;
+        long endBucket = 0;
+        if (offsetBucket + bucketNum >= 256) {
+            endBucket = (1l << 40) - 1l;
+        } else {
+            endBucket = offsetBucket + bucketNum;
+            endBucket = endBucket << 32;
+        }
+
+        return new Pair<Long, Long>(startBucket, endBucket);
+    }
+
+    public static long getSamplingUid(byte[] qualifier) {
+      byte[] suid = new byte[8];
+      suid[0] = 0;
+      suid[1] = 0;
+      suid[2] = 0;
+      for (int i=3; i<8; i++) {
+        suid[i] = qualifier[i-3];
+      }
+      return Bytes.toLong(suid);
+    }
+
 }

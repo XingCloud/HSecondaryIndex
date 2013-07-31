@@ -2,13 +2,18 @@ package com.xingcloud.xa.secondaryindex;
 
 import com.xingcloud.xa.secondaryindex.manager.HBaseResourceManager;
 import com.xingcloud.xa.secondaryindex.utils.Constants;
+import com.xingcloud.xa.secondaryindex.utils.WriteUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.Mutation;
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Scan;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 /**
@@ -41,6 +46,20 @@ public class HBaseOperationTask implements Callable<Integer>{
           try {
               ht = HBaseResourceManager.getInstance().getTable(tableName);
               ht.batch(operations);
+              for (Mutation mutation : operations) {
+                byte[] rk = mutation.getRow();
+                int val = WriteUtils.getAttrValFromIndexRK(rk);
+                Map<byte[],java.util.List<? extends org.apache.hadoop.hbase.Cell>> map = mutation.getFamilyMap();
+                for (Map.Entry<byte[], List<? extends Cell>> entry : map.entrySet()) {
+                  List<? extends Cell> cells = entry.getValue();
+                  for (Cell cell : cells) {
+                    byte[] qualifier = cell.getQualifierArray();
+                    long suid = WriteUtils.getSamplingUid(qualifier);
+                    LOG.info("Put: " + suid + "\t" + val);
+                  }
+                }
+              }
+
               LOG.info(tableName + " put " + operations.size() + " records. Taken: " + (System.nanoTime()-st)/1.0e9 + " sec");
 
           } catch (Exception e) {

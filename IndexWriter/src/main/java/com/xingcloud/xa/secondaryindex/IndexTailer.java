@@ -74,6 +74,7 @@ public class IndexTailer extends Tail implements Runnable{
   private Map<String, List<Index>> dispatchPuts(List<String> logs) throws IOException {
     Map<String, List<Index>> putsMap = new HashMap<String, List<Index>>();
     for(String log: logs){
+      LOG.info("Read:\t" + log);
       String[] fields = log.split("\t");
       long timestamp = Long.parseLong(fields[0]);
       long uid = Long.parseLong(fields[1]);

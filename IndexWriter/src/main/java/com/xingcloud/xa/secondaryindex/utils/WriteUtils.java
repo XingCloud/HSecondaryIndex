@@ -64,9 +64,9 @@ public class WriteUtils {
 
 
 
-    public static String getAttrValFromIndexRK(byte[] rk) {
-        byte[] val = Arrays.copyOfRange(rk, 2, rk.length);
-        return Bytes.toString(val);
+    public static int getAttrValFromIndexRK(byte[] rk) {
+        byte[] val = Arrays.copyOfRange(rk, 6, rk.length);
+        return Bytes.toInt(val);
     }
 
     public static String getAttrFromVal(byte[] val, boolean isLong) {
@@ -90,4 +90,16 @@ public class WriteUtils {
 
         return new Pair<Long, Long>(startBucket, endBucket);
     }
+
+    public static long getSamplingUid(byte[] qualifier) {
+      byte[] suid = new byte[8];
+      suid[0] = 0;
+      suid[1] = 0;
+      suid[2] = 0;
+      for (int i=3; i<8; i++) {
+        suid[i] = qualifier[i-3];
+      }
+      return Bytes.toLong(suid);
+    }
+
 }

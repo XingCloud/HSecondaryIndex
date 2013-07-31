@@ -99,4 +99,10 @@ public class WriteUtils {
       return Bytes.toLong(suid);
     }
 
+  public static void main(String[] args) {
+    String valsb = "\\x00\\x00\\x12O\\x06(\\x0EJ";
+    byte[] valb =  Bytes.toBytesBinary(valsb);
+    System.out.println(Bytes.toLong(valb));
+  }
+
 }

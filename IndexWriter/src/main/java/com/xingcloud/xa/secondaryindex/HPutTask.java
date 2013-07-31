@@ -97,6 +97,8 @@ public class HPutTask implements Runnable  {
           } else {
               combineMap.put(index, operation+indexType);
           }
+          LOG.info(index + "\thashcode: " + index.hashCode());
+
         }
 
         int currentSize = 0;

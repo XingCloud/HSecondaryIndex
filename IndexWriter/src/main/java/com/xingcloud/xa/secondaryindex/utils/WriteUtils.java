@@ -64,9 +64,9 @@ public class WriteUtils {
 
 
 
-    public static int getAttrValFromIndexRK(byte[] rk) {
-        byte[] val = Arrays.copyOfRange(rk, 6, rk.length);
-        return Bytes.toInt(val);
+    public static short getPropIDFromRK(byte[] rk) {
+      byte[] propID = Arrays.copyOfRange(rk, 0, 2);
+      return Bytes.toShort(propID);
     }
 
     public static String getAttrFromVal(byte[] val, boolean isLong) {

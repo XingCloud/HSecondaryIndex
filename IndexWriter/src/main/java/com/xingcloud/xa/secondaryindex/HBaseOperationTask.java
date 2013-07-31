@@ -6,6 +6,7 @@ import com.xingcloud.xa.secondaryindex.utils.WriteUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.Cell;
+import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.Mutation;
 import org.apache.hadoop.hbase.client.Put;
@@ -48,14 +49,14 @@ public class HBaseOperationTask implements Callable<Integer>{
               ht.batch(operations);
               for (Mutation mutation : operations) {
                 byte[] rk = mutation.getRow();
-                int val = WriteUtils.getAttrValFromIndexRK(rk);
+                short propID = WriteUtils.getPropIDFromRK(rk);
                 Map<byte[],java.util.List<? extends org.apache.hadoop.hbase.Cell>> map = mutation.getFamilyMap();
                 for (Map.Entry<byte[], List<? extends Cell>> entry : map.entrySet()) {
                   List<? extends Cell> cells = entry.getValue();
                   for (Cell cell : cells) {
-                    byte[] qualifier = cell.getQualifierArray();
-                    long suid = WriteUtils.getSamplingUid(qualifier);
-                    LOG.info("Put: " + suid + "\t" + val);
+                    KeyValue kv = (KeyValue)cell;
+                    long suid = WriteUtils.getSamplingUid(kv.getQualifier());
+                    LOG.info("Put: " + suid + "\t" + propID);
                   }
                 }
               }

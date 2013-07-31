@@ -1,6 +1,7 @@
 package com.xingcloud.xa.secondaryindex.model;
 
 import com.xingcloud.xa.secondaryindex.utils.TimeUtil;
+import org.apache.hadoop.hbase.util.Bytes;
 
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
@@ -61,7 +62,7 @@ public class Index {
     int result = 1;
     result = prime * result + projectID.hashCode();
     result = prime * result + getDate().hashCode();
-    result = prime * result + value.hashCode();
+    result = prime * result + Bytes.toBytesBinary(value).hashCode();
     result = prime * result + projectID.hashCode();
     result = prime * result + (int)(uid ^ (uid >>> 32));
     return result;

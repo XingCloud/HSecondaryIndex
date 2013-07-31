@@ -56,7 +56,7 @@ public class Index {
 
   @Override
   public int hashCode(){
-    return (projectID + "_" + propertyID + "_" + getDate()+"_"+value +"_"+ uid).hashCode();
+    return (projectID + "_" + getDate()+"_"+value).hashCode() + propertyID + ((Long)uid).hashCode();
   }
 
   @Override

@@ -24,8 +24,8 @@ public class WriteUtils {
         return rk;
     }
 
-    public static byte[] getUIIndexRowKey(int propertyID, String date, String attrVal) {
-        return bytesCombine(Bytes.toBytes((short)propertyID), Bytes.toBytes(Integer.valueOf(date)),
+    public static byte[] getUIIndexRowKey(short propertyID, String date, String attrVal) {
+        return bytesCombine(Bytes.toBytes(propertyID), Bytes.toBytes(Integer.valueOf(date)),
                 Bytes.toBytesBinary(attrVal));
     }
 

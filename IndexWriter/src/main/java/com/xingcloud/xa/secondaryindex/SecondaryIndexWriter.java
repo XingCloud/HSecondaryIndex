@@ -1,9 +1,11 @@
 package com.xingcloud.xa.secondaryindex;
 
+import com.xingcloud.xa.secondaryindex.utils.Constants;
 import com.xingcloud.xa.secondaryindex.utils.HTableAdmin;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.xml.DOMConfigurator;
+
+import java.io.File;
 
 /**
  * Created with IntelliJ IDEA.
@@ -17,9 +19,10 @@ public class SecondaryIndexWriter {
   private static final Log LOG = LogFactory.getLog(SecondaryIndexWriter.class);
   
   public static void main(String args[]){
-    LOG.info("Start secondary writer service...");
+    LOG.info("Start secondaryindex writer service...");
+
     HTableAdmin.initHAdmin("single_hbase.xml");
-    new Thread(new IndexTailer("/data0/log/secondaryindexconfig/")).start();
-    //System.out.print(Bytes.toStringBinary(Bytes.toBytes(554062796504L)));
+    String configDir = Constants.SECONDARY_INDEX_LOG_DIR + File.separator + "config";
+    new Thread(new IndexTailer(configDir)).start();
   }
 }

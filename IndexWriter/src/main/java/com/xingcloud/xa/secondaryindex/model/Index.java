@@ -1,5 +1,7 @@
 package com.xingcloud.xa.secondaryindex.model;
 
+import com.xingcloud.xa.secondaryindex.utils.TimeUtil;
+
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 
@@ -13,21 +15,12 @@ import java.util.TimeZone;
 public class Index {
   private String projectID;
   private long uid;
-  private int propertyID;//1 2 3
+  private short propertyID;
   private String value="";
   private String operation;
-  private long timestamp; //System.currentTimeMillis()
+  private long timestamp;
 
-  private static final TimeZone TZ = TimeZone.getTimeZone("GMT+8");
-  private static SimpleDateFormat sdf;
-  static {
-      sdf = new SimpleDateFormat("yyyyMMdd");
-      sdf.setTimeZone(TZ);
-  }
-
-
-
-  public Index(String projectID, long uid, int propertyID , String value, String operation, long timestamp){
+  public Index(String projectID, long uid, short propertyID , String value, String operation, long timestamp){
     this.projectID = projectID;
     this.uid = uid;
     this.propertyID = propertyID;
@@ -35,7 +28,6 @@ public class Index {
     this.operation = operation;
     this.timestamp = timestamp;
   }
-
 
   public String getProjectID() {
     return projectID;
@@ -45,7 +37,7 @@ public class Index {
     return uid;
   }
 
-  public int getPropertyID() {
+  public short getPropertyID() {
     return propertyID;
   }
 
@@ -61,11 +53,11 @@ public class Index {
   public boolean equals(Object o){
     return (this.hashCode() == o.hashCode());  
   }
+
   @Override
   public int hashCode(){
     return (projectID + "_" + propertyID + "_" + getDate()+"_"+value +"_"+ uid).hashCode();
   }
-
 
   @Override
   public String toString(){
@@ -80,7 +72,7 @@ public class Index {
     this.uid = uid;
   }
 
-  public void setPropertyID(int propertyID) {
+  public void setPropertyID(short propertyID) {
     this.propertyID = propertyID;
   }
 
@@ -102,6 +94,6 @@ public class Index {
   }
 
   public String getDate() {
-    return sdf.format(timestamp);
+    return TimeUtil.getDayString(timestamp);
   }
 }

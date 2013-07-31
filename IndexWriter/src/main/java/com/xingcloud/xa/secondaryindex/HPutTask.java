@@ -87,7 +87,7 @@ public class HPutTask implements Runnable  {
 
         for(Index index: indexes){
           int operation = 1;
-          if(index.getOperation().equals("delete")){
+          if(index.getOperation().equals(Constants.OPERATION_DELETE)){
             operation = -1;
           }
 

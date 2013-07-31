@@ -3,9 +3,6 @@ package com.xingcloud.xa.secondaryindex.manager;
 import com.xingcloud.xa.secondaryindex.utils.HTableAdmin;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HConnectionManager;
 import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.HTablePool;
@@ -22,19 +19,18 @@ import java.io.IOException;
 public class HBaseResourceManager {
     private static Log logger = LogFactory.getLog(HBaseResourceManager.class);
     private HTablePool pool;
-    private final int max_size = 32;
-    private static HBaseResourceManager m_instance;
+    private final int MAX_SIZE = 32;
+    private static HBaseResourceManager instance;
 
     public synchronized static HBaseResourceManager getInstance() throws IOException {
-        if (m_instance == null) {
-            m_instance = new HBaseResourceManager();
+        if (instance == null) {
+            instance = new HBaseResourceManager();
         }
-        return m_instance;
+        return instance;
     }
 
-
     private HBaseResourceManager() throws IOException {
-        this.pool = new HTablePool(HTableAdmin.getHBaseConf(), max_size);
+        this.pool = new HTablePool(HTableAdmin.getHBaseConf(), MAX_SIZE);
     }
 
     public HTableInterface getTable(byte[] tableName) throws IOException {

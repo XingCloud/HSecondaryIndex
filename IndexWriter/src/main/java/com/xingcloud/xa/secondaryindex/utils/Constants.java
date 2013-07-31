@@ -17,4 +17,9 @@ public class Constants {
 
     public static final String PROPERTY_TABLE_PREFIX = "properties_";
     public static final String INDEX_TABLE_SUFFIX = "_index";
+
+    public static final String OPERATION_PUT = "put";
+    public static final String OPERATION_DELETE = "delete";
+
+    public static final String SECONDARY_INDEX_LOG_DIR = "/data0/log/secondaryindex";
 }

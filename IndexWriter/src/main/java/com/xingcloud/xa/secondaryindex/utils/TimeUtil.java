@@ -55,6 +55,13 @@ public class TimeUtil {
         return Integer.valueOf(DF.format(date));
     }
 
+    public static String getDayString(long timestamp){
+        final SimpleDateFormat df = new SimpleDateFormat("yyyyMMdd");
+        df.setTimeZone(TZ);
+        Date date = new Date(timestamp);
+        return df.format(date);
+    }
+
     public static int getDay(Date date) {
         final SimpleDateFormat DF = new SimpleDateFormat("yyyyMMdd");
         DF.setTimeZone(TZ);
@@ -83,5 +90,7 @@ public class TimeUtil {
         System.out.println(nextDay(20130520));
 		System.out.println(dayToTimestamp(20130719));
 		System.out.println(dayToTimestamp(20130720));
-	}
+        System.out.println(getDay(dayToTimestamp(20130719)));
+        System.out.println(getDayString(dayToTimestamp(20130720)));
+    }
 }

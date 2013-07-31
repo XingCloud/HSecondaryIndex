@@ -20,6 +20,8 @@ public class Index {
   private String operation;
   private long timestamp;
 
+  final int prime = 31;
+
   public Index(String projectID, long uid, short propertyID , String value, String operation, long timestamp){
     this.projectID = projectID;
     this.uid = uid;
@@ -56,7 +58,13 @@ public class Index {
 
   @Override
   public int hashCode(){
-    return (projectID + "_" + getDate()+"_"+value).hashCode() + propertyID + ((Long)uid).hashCode();
+    int result = 1;
+    result = prime * result + projectID.hashCode();
+    result = prime * result + getDate().hashCode();
+    result = prime * result + value.hashCode();
+    result = prime * result + projectID.hashCode();
+    result = prime * result + (int)(uid ^ (uid >>> 32));
+    return result;
   }
 
   @Override

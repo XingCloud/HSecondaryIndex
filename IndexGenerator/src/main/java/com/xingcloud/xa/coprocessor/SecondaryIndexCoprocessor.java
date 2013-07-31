@@ -51,7 +51,6 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
             return;
         }
 
-
         String projectID = tableName.substring(PROPERTY_TABLE_PREFIX.length());
 
         List<byte[]> qualifierList = new ArrayList<byte[]>();
@@ -139,7 +138,6 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
             }
             submitIndexJob(projectID, false, put.getRow(), qualifier, null, kv.getValue(), ts);
         }
-
     }
 
     private KeyValue[] getValue(HRegion region, byte[] uid, List<byte[]> qualifierList) throws IOException {
@@ -147,10 +145,10 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         for (byte[] qualifier : qualifierList) {
             get.addColumn(CF_NAME, qualifier);
         }
-      Result r = null;
-      r = region.get(get);
 
-      if(r.isEmpty()){
+        Result r = null;
+        r = region.get(get);
+        if(r.isEmpty()){
             return null;
         } else {
             return r.raw();

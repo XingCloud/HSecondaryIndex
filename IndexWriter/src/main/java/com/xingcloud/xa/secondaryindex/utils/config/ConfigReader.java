@@ -20,6 +20,7 @@ public class ConfigReader {
     private ConfigReader() {
        allConfigFile=new HashMap<String,Dom>();
     }
+
     private Dom readFile (String file){
         Dom dom=null;
         try {
@@ -31,6 +32,7 @@ public class ConfigReader {
         }
         return dom;
     }
+
     private Dom getDomRoot(String file){
         Dom dom=allConfigFile.get(file);
         if(dom==null) {
@@ -39,6 +41,7 @@ public class ConfigReader {
         }
         return dom;
     }
+
     private String getConfigField(String file, String[] path){
        Dom configFile=getDomRoot(file);
 
@@ -54,7 +57,9 @@ public class ConfigReader {
          return now.getSelfText();
        }
     }
+
     static private ConfigReader instance;
+
     /**
      * get the single instance;
      * @return reutrn instance;
@@ -63,7 +68,6 @@ public class ConfigReader {
         if(instance==null) instance=new ConfigReader();
         return instance;
     }
-
 
     /**
      * get the config field in the config file

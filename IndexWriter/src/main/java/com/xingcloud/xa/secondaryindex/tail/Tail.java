@@ -199,7 +199,7 @@ public abstract class Tail {
             Properties prop = readConfig();
             this.datadir = prop.getProperty(PROP_DATADIR, "/data/log/");
             this.datafile = prop.getProperty(PROP_DATAFILE, "stream.log");
-            this.day = Long.valueOf(prop.getProperty(PROP_DAY, "" + TimeUtil.getDay(System.currentTimeMillis())));
+            this.day = Integer.valueOf(prop.getProperty(PROP_DAY, "" + TimeUtil.getDay(System.currentTimeMillis())));
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -222,7 +222,7 @@ public abstract class Tail {
     protected String configPath = "no_setting";
     protected String config = "config.properties";
     protected String sendlogprocess = "sendlog.process";
-    protected long day = 0;
+    protected int day = 0;  // day is in the form of 20130731
     protected long line = 0;
 
     protected long dayStartTime = 0;
@@ -315,7 +315,7 @@ public abstract class Tail {
                 } else {
                     int idxtab_f = 0;
                     int idxtab_t = rdline.indexOf('\t');
-                    this.day = Long.valueOf(rdline.substring(idxtab_f, idxtab_t));
+                    this.day = Integer.valueOf(rdline.substring(idxtab_f, idxtab_t));
                     idxtab_f = idxtab_t + 1;
                     idxtab_t = rdline.indexOf('\t', idxtab_f);
                     this.line = Long.valueOf(rdline.substring(idxtab_f, idxtab_t));

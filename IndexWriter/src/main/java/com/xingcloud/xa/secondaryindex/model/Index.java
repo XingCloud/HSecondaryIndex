@@ -1,7 +1,6 @@
 package com.xingcloud.xa.secondaryindex.model;
 
 import java.text.SimpleDateFormat;
-import java.util.Locale;
 import java.util.TimeZone;
 
 /**

@@ -15,6 +15,7 @@ import java.util.TimeZone;
  */
 public class Index {
   private volatile int hashCode = 0;
+  final int prime = 31;
 
   private String projectID;
   private long uid;
@@ -22,8 +23,7 @@ public class Index {
   private byte[] value;
   private String operation;
   private long timestamp;
-
-  final int prime = 31;
+  private String date;
 
   public Index(String projectID, long uid, short propertyID , byte[] value, String operation, long timestamp){
     this.projectID = projectID;
@@ -32,6 +32,7 @@ public class Index {
     this.value = value;
     this.operation = operation;
     this.timestamp = timestamp;
+    this.date = TimeUtil.getDayString(timestamp);
   }
 
   public String getProjectID() {
@@ -65,7 +66,7 @@ public class Index {
     if (result == 0) {
       result = 1;
       result = prime * result + projectID.hashCode();
-      result = prime * result + (int)(timestamp ^ (timestamp >>> 32));
+      result = prime * result + date.hashCode();
       result = prime * result + value.hashCode();
       result = prime * result + projectID.hashCode();
       result = prime * result + (int)(uid ^ (uid >>> 32));
@@ -109,6 +110,6 @@ public class Index {
   }
 
   public String getDate() {
-    return TimeUtil.getDayString(timestamp);
+    return date;
   }
 }

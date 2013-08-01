@@ -20,35 +20,29 @@ public class IndexIgnoreOperationComparator implements Comparator<Index> {
     }
 
     public static void main(String[] args){
+        long timestamp = System.currentTimeMillis();
         Index ix1 = new Index("sof-dsk", 123456L, (short)20, Bytes.toBytes(20130713123456L),
-                Constants.OPERATION_PUT, System.currentTimeMillis());
+                Constants.OPERATION_PUT, timestamp);
 
-        Index ix2 = new Index("sof-dsk", 123456L, (short)20, Bytes.toBytes(20130713123456L),
-                Constants.OPERATION_DELETE, System.currentTimeMillis());
+        Index ix2 = new Index("sof-dsk", 123456L, (short)20, Bytes.toBytes(20130713123457L),
+                Constants.OPERATION_DELETE, timestamp);
 
         IndexIgnoreOperationComparator ic = new IndexIgnoreOperationComparator();
-        long start = System.currentTimeMillis();
+
+        System.out.println(ix1.compareTo(ix2));
         System.out.println(ic.compare(ix1, ix2));
-        for (int i = 0; i < 100000; i++) {
-            ic.compare(ix1, ix2);
+
+        long start = System.currentTimeMillis();
+        for (int i = 0; i < 1000000; i++) {
+            ix1.compareTo(ix2);
         }
         System.out.println(System.currentTimeMillis() - start);
 
-        int[] ints = {1,2,3,4,4,4,5,5,6,7};
-        for (int i = 0; i < ints.length; ){
-            int startInt = ints[i];
-            int j;
-            for (j = i + 1; j < ints.length; j++){
-                int endInt = ints[j];
-                if (startInt != endInt){
-                    break;
-                }
-            }
-
-            System.out.println("i= " + i + ", j=" + j);
-            i = j;
+        start = System.currentTimeMillis();
+        for (int i = 0; i < 1000000; i++) {
+            ic.compare(ix1, ix2);
         }
-
+        System.out.println(System.currentTimeMillis() - start);
     }
 
 }

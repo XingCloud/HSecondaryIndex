@@ -80,11 +80,13 @@ public class HPutTask implements Runnable  {
       List<Mutation> mutations = new ArrayList<Mutation>(PUT_SIZE);
       result.add(mutations);
 
-      Collections.sort(indexes, new IndexIgnoreOperationComparator());
-      IndexIgnoreOperationComparator comparator = new IndexIgnoreOperationComparator();
+      long st = System.currentTimeMillis();
+      Collections.sort(indexes);
+      LOG.info("sort indexes, time cost: " + (System.currentTimeMillis() - st) + "ms");
 
       int currentSize = 0;  // track current size of the group
       int group = 0;    // group number
+      int optimized = 0;
 
       for (int outer = 0; outer < indexes.size(); ){
           Index startIndex = indexes.get(outer);
@@ -92,7 +94,7 @@ public class HPutTask implements Runnable  {
           // traverse forward until encounter one that's not equal to startIndex
           for ( ; inner < indexes.size(); inner++){
               Index nextIndex = indexes.get(inner);
-              if (comparator.compare(startIndex, nextIndex) != 0){
+              if (startIndex.compareTo(nextIndex) != 0){
                   break;
               }
           }
@@ -101,6 +103,8 @@ public class HPutTask implements Runnable  {
           for (int i = outer; i < inner; i++){
               sum += indexes.get(i).getOperation().equals(Constants.OPERATION_DELETE) ? -1 : 1;
           }
+
+          optimized += inner - outer - 1;
 
           if (sum != 0){
               byte[] row = WriteUtils.getUIIndexRowKey(
@@ -133,6 +137,8 @@ public class HPutTask implements Runnable  {
 
           outer = inner;    // skip those equal indexes
       }
+
+      LOG.info("eliminated mutation operations: " + optimized);
 
       return result;
   }

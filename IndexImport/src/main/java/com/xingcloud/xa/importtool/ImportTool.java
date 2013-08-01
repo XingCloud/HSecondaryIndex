@@ -29,9 +29,11 @@ public class ImportTool {
 
             if(args[0].equals("remove")){
                 new ImportJob(config).batchRemove(pids);
-            }else{
-                new ImportJob(config).batchStart(args[0], pids);
-            }
+            } else if (args[0].equals("del_from_meta")) {
+                HBaseUtils.deleteTableFromMETA(args[1]);
+            } else{
+            new ImportJob(config).batchStart(args[0], pids);
+          }
         }
         catch (IOException e) {
             e.printStackTrace();

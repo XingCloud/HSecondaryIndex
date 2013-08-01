@@ -31,6 +31,7 @@ public class HBaseUtils {
         KeyValue kv = kvs[i];
         byte[] row = kv.getRow();
         String rowStr = Bytes.toString(row);
+        LOG.info("Scan row: " + rowStr);
         if (rowStr.startsWith(talbe + ",")) {
           Delete del = new Delete(row);
           LOG.info("Del row " + rowStr);

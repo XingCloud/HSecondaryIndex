@@ -60,7 +60,7 @@ public class ImportWorker implements Runnable  {
             while(line != null){
                 String[] words = line.split("\t");
                 if(words.length != 2){
-                    LOG.warn("Invalid line: " + line);
+                    LOG.warn("Property name: " + userProp.getPropName() + " Invalid line: " + line);
                     line = reader.readLine();
                     continue;
                 }

@@ -4,6 +4,7 @@ import com.xingcloud.xa.secondaryindex.utils.TimeUtil;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.TimeZone;
 
 /**
@@ -53,10 +54,10 @@ public class Index {
   public String getOperation() {
     return operation;
   }
-  
+
   @Override
   public boolean equals(Object o){
-    return (this.hashCode() == o.hashCode());  
+    return (this.hashCode() == o.hashCode());
   }
 
   @Override
@@ -78,7 +79,11 @@ public class Index {
   public String toString(){
     return operation+"\t"+projectID+"\t"+propertyID+"\t"+timestamp+"\t"+value+"\t"+uid;
   }
-  
+
+  public String toStringIgnoreOperation(){
+      return projectID + propertyID + timestamp + Arrays.toString(value) + uid;
+  }
+
   public void setProjectID(String projectID) {
     this.projectID = projectID;
   }

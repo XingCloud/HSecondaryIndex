@@ -1,6 +1,7 @@
 package com.xingcloud.xa.secondaryindex;
 
 import com.xingcloud.xa.secondaryindex.model.Index;
+import com.xingcloud.xa.secondaryindex.model.IndexIgnoreOperationComparator;
 import com.xingcloud.xa.secondaryindex.pool.ThreadPool;
 import com.xingcloud.xa.secondaryindex.utils.Constants;
 import com.xingcloud.xa.secondaryindex.utils.HTableAdmin;
@@ -11,10 +12,7 @@ import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.FutureTask;
 
 /**
@@ -78,65 +76,64 @@ public class HPutTask implements Runnable  {
   }
   
   private List<List<Mutation>> optimizePuts(List<Index> indexes) {
- 
       List<List<Mutation>> result = new ArrayList<List<Mutation>>();
       List<Mutation> mutations = new ArrayList<Mutation>(PUT_SIZE);
       result.add(mutations);
-      try{
-        Map<Index, Integer> combineMap = new HashMap<Index, Integer>();
 
-        for(Index index: indexes){
-          int operation = 1;
-          if(index.getOperation().equals(Constants.OPERATION_DELETE)){
-            operation = -1;
-          }
+      Collections.sort(indexes, new IndexIgnoreOperationComparator());
+      IndexIgnoreOperationComparator comparator = new IndexIgnoreOperationComparator();
 
-          Integer indexType = combineMap.get(index);
-          if (indexType == null) {
-              combineMap.put(index, operation);
-          } else {
-              combineMap.put(index, operation+indexType);
-          }
-        }
+      int currentSize = 0;  // track current size of the group
+      int group = 0;    // group number
 
-        int currentSize = 0;
-        int i = 0;
-        for(Map.Entry<Index, Integer> entry:combineMap.entrySet()){
-          Index index = entry.getKey();
-          int operation = entry.getValue();
-          if (operation == 0) {
-              continue;
-          }
-
-          byte[] row = WriteUtils.getUIIndexRowKey(index.getPropertyID(), index.getDate(), index.getValue());
-
-          Mutation mutation = null;
-          if(0 > entry.getValue()){
-            mutation = new Delete(row);
-            ((Delete)mutation).deleteColumns(Constants.COLUMN_FAMILY.getBytes(), WriteUtils.getFiveBytes(index.getUid()));
-          }else if (0 < entry.getValue()){
-            mutation = new Put(row);
-            ((Put)mutation).add(Constants.COLUMN_FAMILY.getBytes(), WriteUtils.getFiveBytes(index.getUid()),Bytes.toBytes("0"));
-          }
-
-          if (mutation != null) {
-              mutation.setDurability(Durability.SKIP_WAL);
-              if (currentSize < PUT_SIZE) {
-                List<Mutation> operations = result.get(i);
-                operations.add(mutation);
-                currentSize++;
-              } else {
-                List<Mutation> operations = new ArrayList<Mutation>();
-                operations.add(mutation);
-                result.add(operations);
-                i++;
-                currentSize = 1;
+      for (int outer = 0; outer < indexes.size(); ){
+          Index startIndex = indexes.get(outer);
+          int inner = outer + 1;
+          // traverse forward until encounter one that's not equal to startIndex
+          for ( ; inner < indexes.size(); inner++){
+              Index nextIndex = indexes.get(inner);
+              if (comparator.compare(startIndex, nextIndex) != 0){
+                  break;
               }
           }
-        }
-     }catch(Exception e){
-        e.printStackTrace(); 
-     }
-    return result;
+
+          int sum = 0;
+          for (int i = outer; i < inner; i++){
+              sum += indexes.get(i).getOperation().equals(Constants.OPERATION_DELETE) ? -1 : 1;
+          }
+
+          if (sum != 0){
+              byte[] row = WriteUtils.getUIIndexRowKey(
+                      startIndex.getPropertyID(), startIndex.getDate(), startIndex.getValue());
+
+              Mutation mutation = null;
+              if (sum < 0){
+                  mutation = new Delete(row);
+                  ((Delete)mutation).deleteColumns(Constants.COLUMN_FAMILY.getBytes(),
+                          WriteUtils.getFiveBytes(startIndex.getUid()));
+              } else {
+                  mutation = new Put(row);
+                  ((Put)mutation).add(Constants.COLUMN_FAMILY.getBytes(),
+                          WriteUtils.getFiveBytes(startIndex.getUid()), Bytes.toBytes('0'));
+              }
+
+              mutation.setDurability(Durability.SKIP_WAL);
+              if (currentSize < PUT_SIZE) {
+                  List<Mutation> operations = result.get(group);
+                  operations.add(mutation);
+                  currentSize++;
+              } else {
+                  List<Mutation> operations = new ArrayList<Mutation>(PUT_SIZE);
+                  operations.add(mutation);
+                  result.add(operations);
+                  group++;
+                  currentSize = 1;
+              }
+          }
+
+          outer = inner;    // skip those equal indexes
+      }
+
+      return result;
   }
 }

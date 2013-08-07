@@ -102,10 +102,10 @@ public class Index implements Comparable<Index> {
             if(right == null)
                 return 0;
             else
-                return 1;
+                return -1;
         } else {
             if(right == null)
-                return -1;
+                return 1;
 
             // left and right are both not null
             int minLength = left.length < right.length ? left.length: right.length;
@@ -118,9 +118,9 @@ public class Index implements Comparable<Index> {
             // if we reach here, left[0: minLength] == right[0: minLength]
 
             if(left.length > minLength)
-                return -1;
-            if(right.length > minLength)
                 return 1;
+            if(right.length > minLength)
+                return -1;
 
             return 0;
         }

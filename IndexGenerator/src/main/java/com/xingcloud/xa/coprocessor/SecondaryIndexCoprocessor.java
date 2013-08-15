@@ -141,19 +141,18 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
     }
 
     private KeyValue[] getValue(HRegion region, byte[] uid, List<byte[]> qualifierList) throws IOException {
-        return null;
-//        Get get = new Get(uid);
-//        for (byte[] qualifier : qualifierList) {
-//            get.addColumn(CF_NAME, qualifier);
-//        }
-//
-//        Result r = null;
-//        r = region.get(get);
-//        if(r.isEmpty()){
-//            return null;
-//        } else {
-//            return r.raw();
-//        }
+        Get get = new Get(uid);
+        for (byte[] qualifier : qualifierList) {
+            get.addColumn(CF_NAME, qualifier);
+        }
+
+        Result r = null;
+        r = region.get(get);
+        if(r.isEmpty()){
+            return null;
+        } else {
+            return r.raw();
+        }
     }
 
     private void submitIndexJob(String projectID, boolean shouldDel, byte[] uid,

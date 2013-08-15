@@ -141,18 +141,29 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
     }
 
     private KeyValue[] getValue(HRegion region, byte[] uid, List<byte[]> qualifierList) throws IOException {
-        Get get = new Get(uid);
+        List<KeyValue> kvs = new ArrayList();
         for (byte[] qualifier : qualifierList) {
-            get.addColumn(CF_NAME, qualifier);
+          Get get = new Get(uid);
+          get.addColumn(CF_NAME, qualifier);
+          Result r = region.get(get);
+          if (!r.isEmpty()) {
+            kvs.add(r.raw()[0]);
+          }
         }
-
-        Result r = null;
-        r = region.get(get);
-        if(r.isEmpty()){
-            return null;
-        } else {
-            return r.raw();
-        }
+        return (KeyValue[]) kvs.toArray(new KeyValue[kvs.size()]);
+//        Get get = new Get(uid);
+//
+//        for (byte[] qualifier : qualifierList) {
+//            get.addColumn(CF_NAME, qualifier);
+//        }
+//
+//        Result r = null;
+//        r = region.get(get);
+//        if(r.isEmpty()){
+//            return null;
+//        } else {
+//            return r.raw();
+//        }
     }
 
     private void submitIndexJob(String projectID, boolean shouldDel, byte[] uid,

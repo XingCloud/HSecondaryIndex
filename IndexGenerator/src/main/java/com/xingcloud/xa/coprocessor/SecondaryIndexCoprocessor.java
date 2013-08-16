@@ -143,6 +143,7 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
 
     private KeyValue[] getValue(HRegion region, byte[] uid, List<byte[]> qualifierList) throws IOException {
         Get get = new Get(uid);
+
         for (byte[] qualifier : qualifierList) {
             get.addColumn(CF_NAME, qualifier);
         }

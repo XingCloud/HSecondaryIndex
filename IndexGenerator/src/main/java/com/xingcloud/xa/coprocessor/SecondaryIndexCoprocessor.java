@@ -28,7 +28,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SecondaryIndexCoprocessor extends BaseRegionObserver {
 
 	// projectID => {propertyID => UpdateFunc, ...}
-    private static Map<String, Map<Integer, UpdateFunc>> metaInfo = new ConcurrentHashMap<String, Map<Integer, UpdateFunc>>();
+    private static Map<String, Map<Short, UpdateFunc>> metaInfo =
+            new ConcurrentHashMap<String, Map<Short, UpdateFunc>>();
     private static Log INDEX_LOG = LogFactory.getLog(SecondaryIndexCoprocessor.class);
     private static Log LOG = LogFactory.getLog(HRegionServer.class);
 
@@ -55,9 +56,9 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
 
         List<byte[]> qualifierList = new ArrayList<byte[]>();
         //Cache KV in puts
-        Map<Integer, KeyValue> kvCache = new HashMap<Integer, KeyValue>();
+        Map<Short, KeyValue> kvCache = new HashMap<Short, KeyValue>();
         //Cache index in puts
-        Map<Integer, Integer> indexCache = new HashMap<Integer, Integer>();
+        Map<Short, Integer> indexCache = new HashMap<Short, Integer>();
 
         List<? extends Cell> cells = put.getFamilyMap().get(CF_NAME);
 
@@ -66,20 +67,20 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
             KeyValue kv = KeyValueUtil.ensureKeyValue(cell);
             byte[] qualifier = kv.getQualifier();
             qualifierList.add(qualifier);
-            kvCache.put(Bytes.toInt(qualifier), kv);
-            indexCache.put(Bytes.toInt(qualifier), i);
+            kvCache.put(Bytes.toShort(qualifier), kv);
+            indexCache.put(Bytes.toShort(qualifier), i);
             i++;
         }
 
         //Get old values which related to the qualifier
         KeyValue[] oldValues = null;
         oldValues = getValue(region, put.getRow(), qualifierList);
-        Map<Integer, UpdateFunc> metaMap = getMetaInfo(projectID, false);
+        Map<Short, UpdateFunc> metaMap = getMetaInfo(projectID, false);
 
         //Put attributes which already exist in table
         if (oldValues != null) {
             for (KeyValue kvOld : oldValues) {
-                int qualifier = Bytes.toInt(kvOld.getQualifier());
+                short qualifier = Bytes.toShort(kvOld.getQualifier());
                 byte[] oldValue = kvOld.getValue();
                 KeyValue kvNew = kvCache.get(qualifier);
                 byte[] newValue = kvNew.getValue();
@@ -118,8 +119,8 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         }
 
         //Put remain attributes which don't exist in table before
-        for (Map.Entry<Integer, KeyValue> entry : kvCache.entrySet()) {
-            int qualifier = entry.getKey();
+        for (Map.Entry<Short, KeyValue> entry : kvCache.entrySet()) {
+            short qualifier = entry.getKey();
             KeyValue kv = entry.getValue();
             UpdateFunc uf = metaMap.get(qualifier);
             if (uf == null) {
@@ -156,7 +157,7 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
     }
 
     private void submitIndexJob(String projectID, boolean shouldDel, byte[] uid,
-                                int propertyID, byte[] oldValue, byte[] newValue, long ts) throws IOException {
+                                short propertyID, byte[] oldValue, byte[] newValue, long ts) throws IOException {
         byte[] convertedUid = {0,0,0,0,0,0,0,0};
 		System.arraycopy(uid, 0, convertedUid, 3, 5);
 
@@ -167,15 +168,15 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
         INDEX_LOG.info(ts + "\t" + uidL + "\t" + propertyID + "\t" + oldValueStr + "\t" + newValueStr + "\t" + shouldDel + "\t" + projectID);
     }
 
-    private Map<Integer, UpdateFunc> getMetaInfo(String projectID, boolean force) throws IOException {
-        Map<Integer, UpdateFunc> metaMap = metaInfo.get(projectID);
+    private Map<Short, UpdateFunc> getMetaInfo(String projectID, boolean force) throws IOException {
+        Map<Short, UpdateFunc> metaMap = metaInfo.get(projectID);
         if (metaMap == null || force) {
             long st = System.nanoTime();
             List<UserProp> props = UserProps_DEU_Util.getInstance().getUserProps(projectID);
             LOG.info("Scan property table finished. Property number: " +  props.size() + "Taken: " + (System.nanoTime()-st)/1.0e9 + " sec");
-            metaMap = new HashMap<Integer, UpdateFunc>();
+            metaMap = new HashMap<Short, UpdateFunc>();
             for (UserProp up : props) {
-                metaMap.put(up.getId(), up.getPropFunc());
+                metaMap.put((short)up.getId(), up.getPropFunc());
             }
             metaInfo.put(projectID, metaMap);
         }

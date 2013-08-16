@@ -74,7 +74,7 @@ public class ImportWorker implements Runnable  {
                 dataPut.setDurability(Durability.SKIP_WAL);
 
                 PropType propertyType = userProp.getPropType();
-                int propertyID = userProp.getId();
+                short propertyID = (short)userProp.getId();
 
                 if(propertyType == PropType.sql_datetime || propertyType == PropType.sql_bigint) {
                     dataPut.add(Bytes.toBytes("val"), Bytes.toBytes(propertyID), timestamp,

@@ -199,7 +199,7 @@ public class ImportJob {
         columnDescriptor.setMaxVersions(2000);
         columnDescriptor.setCompressionType(Compression.Algorithm.LZO);
         columnDescriptor.setDataBlockEncoding(DataBlockEncoding.PREFIX_TREE);
-        columnDescriptor.setBloomFilterType(BloomType.ROWCOL);
+        columnDescriptor.setBloomFilterType(BloomType.ROW);
         table.addFamily(columnDescriptor);
     }
     admin.createTable(table);

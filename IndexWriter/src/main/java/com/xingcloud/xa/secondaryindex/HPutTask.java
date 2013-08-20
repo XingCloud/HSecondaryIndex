@@ -104,7 +104,11 @@ public class HPutTask implements Runnable  {
               sum += indexes.get(i).getOperation().equals(Constants.OPERATION_DELETE) ? -1 : 1;
           }
 
-          optimized += inner - outer - 1;
+          if (sum == 0){
+              optimized += inner - outer;
+          } else {
+              optimized += inner - outer - 1;
+          }
 
           if (sum != 0){
               byte[] row = WriteUtils.getUIIndexRowKey(

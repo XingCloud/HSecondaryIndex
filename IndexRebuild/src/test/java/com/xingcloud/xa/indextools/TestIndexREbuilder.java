@@ -30,13 +30,14 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class TestIndexREbuilder extends TestCase {
+public class TestIndexREbuilder {
   private static final Log LOG = LogFactory.getLog(TestIndexREbuilder.class);
 
   private final static String pID = "rebuild-test";
@@ -51,6 +52,7 @@ public class TestIndexREbuilder extends TestCase {
 
   @BeforeClass
   public static void setUpBeforeClass() throws Exception {
+    System.out.println("---------------Before class");
     List<UserProp> ups = new ArrayList<UserProp>();
     UserProp up0 = new UserProp(0, "register_time", PropType.sql_datetime, UpdateFunc.once, PropOrig.sys,
             "rt", "TOTAL_USER");

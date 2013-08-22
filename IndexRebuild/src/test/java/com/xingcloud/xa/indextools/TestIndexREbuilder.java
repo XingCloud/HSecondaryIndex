@@ -183,53 +183,53 @@ public class TestIndexREbuilder {
     }
   }
 
-//  @AfterClass
-//  public static void tearDownAfterClass() throws Exception {
-//    //Cleanup meta table
-//    HTable metaTable = null;
-//    try {
-//       metaTable = new HTable(conf, metaTableName);
-//      List<Delete> deletes = new ArrayList<Delete>();
-//      byte[] rk = Bytes.toBytes(pID + "_register_time");
-//      Delete del = new Delete(rk);
-//      deletes.add(del);
-//
-//      rk = Bytes.toBytes(pID + "_nation");
-//      del = new Delete((rk));
-//      deletes.add(del);
-//
-//      rk = Bytes.toBytes(pID + "_language");
-//      del = new Delete(rk);
-//      deletes.add(del);
-//
-//      metaTable.delete(deletes);
-//
-//      HBaseAdmin admin = new HBaseAdmin(conf);
-//      admin.majorCompact(metaTableName);
-//
-//      //Drop test tables
-//      admin.disableTable(indexTableName);
-//      admin.deleteTable(indexTableName);
-//
-//      admin.disableTable(propTableName);
-//      admin.deleteTable(propTableName);
-//      LOG.info("Cleanup finish.");
-//
-//    } catch (IOException e) {
-//      e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-//    } catch (InterruptedException e) {
-//      e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-//    } finally {
-//      if (metaTable != null) {
-//        try {
-//          metaTable.close();
-//        } catch (IOException e) {
-//          e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-//        }
-//      }
-//    }
-//
-//  }
+  @AfterClass
+  public static void tearDownAfterClass() throws Exception {
+    //Cleanup meta table
+    HTable metaTable = null;
+    try {
+       metaTable = new HTable(conf, metaTableName);
+      List<Delete> deletes = new ArrayList<Delete>();
+      byte[] rk = Bytes.toBytes(pID + "_register_time");
+      Delete del = new Delete(rk);
+      deletes.add(del);
+
+      rk = Bytes.toBytes(pID + "_nation");
+      del = new Delete((rk));
+      deletes.add(del);
+
+      rk = Bytes.toBytes(pID + "_language");
+      del = new Delete(rk);
+      deletes.add(del);
+
+      metaTable.delete(deletes);
+
+      HBaseAdmin admin = new HBaseAdmin(conf);
+      admin.majorCompact(metaTableName);
+
+      //Drop test tables
+      admin.disableTable(indexTableName);
+      admin.deleteTable(indexTableName);
+
+      admin.disableTable(propTableName);
+      admin.deleteTable(propTableName);
+      LOG.info("Cleanup finish.");
+
+    } catch (IOException e) {
+      e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+    } catch (InterruptedException e) {
+      e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+    } finally {
+      if (metaTable != null) {
+        try {
+          metaTable.close();
+        } catch (IOException e) {
+          e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+      }
+    }
+
+  }
 
   @Test
   public void testReBuild() {
@@ -279,23 +279,52 @@ public class TestIndexREbuilder {
 
   }
 
-//  @Test
-//  public void testCleanup() {
-//    List<String> pids = new ArrayList<String>();
-//    pids.add(pID);
-//    IndexRebuilder ir = new IndexRebuilder(pids, dateStr);
-//    ir.runCleanup();
-//  }
-//
-//  @Test
-//  public void testAll() {
-//    List<String> pids = new ArrayList<String>();
-//    pids.add(pID);
-//    IndexRebuilder ir = new IndexRebuilder(pids, dateStr);
-//    ir.runCleanup();
-//    ir.runRebuildIndex();
-//
-//  }
+  @Test
+  public void testCleanup() {
+    List<String> pids = new ArrayList<String>();
+    pids.add(pID);
+    IndexRebuilder ir = new IndexRebuilder(pids, dateStr);
+    ir.runCleanup();
+
+    HTable indexTable = null;
+    try {
+      indexTable = new HTable(conf, indexTableName);
+      Scan scan = new Scan();
+      scan.setCacheBlocks(false);
+      scan.setMaxVersions();
+      scan.setBatch(1000);
+
+      short[] ids = {0,1,2};
+      for (int i=0; i<ids.length; i++) {
+        Set<Long> uidSet = new HashSet<Long>();
+        byte[] srk = bytesCombine(Bytes.toBytes(ids[i]), date);
+        byte[] erk = bytesCombine(Bytes.toBytes(ids[i]), nextDate);
+        scan.setStartRow(srk);
+        scan.setStopRow(erk);
+        ResultScanner scanner = indexTable.getScanner(scan);
+        for (Result r : scanner) {
+          KeyValue[] kvs = r.raw();
+          for (KeyValue kv : kvs) {
+            byte[] uid = kv.getQualifier();
+            byte[] three_bytes = new byte[3];
+            uidSet.add(Bytes.toLong(bytesCombine(three_bytes, uid)));
+          }
+        }
+        assertEquals(0, uidSet.size());
+      }
+
+    } catch (IOException e) {
+      e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+    } finally {
+      if (indexTable != null) {
+        try {
+          indexTable.close();
+        } catch (IOException e) {
+          e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+      }
+    }
+  }
 
   public static byte[] bytesCombine(byte[]... bytesArrays){
     int length = 0;

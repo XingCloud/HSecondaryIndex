@@ -50,7 +50,7 @@ public class TestIndexREbuilder extends TestCase {
   private static int UID_NUM = 10;
 
   @BeforeClass
-  public static void init() {
+  public static void setUpBeforeClass() throws Exception {
     List<UserProp> ups = new ArrayList<UserProp>();
     UserProp up0 = new UserProp(0, "register_time", PropType.sql_datetime, UpdateFunc.once, PropOrig.sys,
             "rt", "TOTAL_USER");
@@ -187,7 +187,7 @@ public class TestIndexREbuilder extends TestCase {
   }
 
 //  @AfterClass
-//  public static void cleanup() {
+//  public static void tearDownAfterClass() throws Exception {
 //    //Cleanup meta table
 //    HTable metaTable = null;
 //    try {

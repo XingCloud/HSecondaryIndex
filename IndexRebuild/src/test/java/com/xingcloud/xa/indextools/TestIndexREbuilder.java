@@ -197,7 +197,7 @@ public class TestIndexREbuilder {
       del = new Delete((rk));
       deletes.add(del);
 
-      rk = Bytes.toBytes(pID + "_language");
+      rk = Bytes.toBytes(pID + "_pay_amount");
       del = new Delete(rk);
       deletes.add(del);
 

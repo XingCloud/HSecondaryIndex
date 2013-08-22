@@ -119,7 +119,7 @@ public class IndexRebuilder {
 
   public static String getIndexTableName(String pID) {
     if (pID.equals("rebuild-test")) {
-      return "p_" + pID + "+i";
+      return "p_" + pID + "_i";
     }
     return PROPERTIES + pID + INDEX;
   }

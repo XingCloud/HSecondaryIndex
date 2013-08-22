@@ -33,10 +33,6 @@
         <value>20</value>
     </property>
     <property>
-        <name>hbase.client.retries.number</name>
-        <value>1</value>
-    </property>
-    <property>
         <name>hbase.ipc.client.tcpnodelay</name>
         <value>true</value>
     </property>

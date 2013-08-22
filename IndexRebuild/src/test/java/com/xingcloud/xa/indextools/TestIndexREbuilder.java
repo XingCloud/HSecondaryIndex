@@ -186,58 +186,56 @@ public class TestIndexREbuilder extends TestCase {
     }
   }
 
-  @AfterClass
-  public static void cleanup() {
-    //Cleanup meta table
-    HTable metaTable = null;
-    try {
-       metaTable = new HTable(conf, metaTableName);
-      List<Delete> deletes = new ArrayList<Delete>();
-      byte[] rk = Bytes.toBytes(pID + "_register_time");
-      Delete del = new Delete(rk);
-      deletes.add(del);
-
-      rk = Bytes.toBytes(pID + "_nation");
-      del = new Delete((rk));
-      deletes.add(del);
-
-      rk = Bytes.toBytes(pID + "_language");
-      del = new Delete(rk);
-      deletes.add(del);
-
-      metaTable.delete(deletes);
-
-      HBaseAdmin admin = new HBaseAdmin(conf);
-      admin.majorCompact(metaTableName);
-
-      //Drop test tables
-      admin.disableTable(indexTableName);
-      admin.deleteTable(indexTableName);
-
-      admin.disableTable(propTableName);
-      admin.deleteTable(propTableName);
-      LOG.info("Cleanup finish.");
-
-    } catch (IOException e) {
-      e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-    } catch (InterruptedException e) {
-      e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-    } finally {
-      if (metaTable != null) {
-        try {
-          metaTable.close();
-        } catch (IOException e) {
-          e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        }
-      }
-    }
-
-  }
+//  @AfterClass
+//  public static void cleanup() {
+//    //Cleanup meta table
+//    HTable metaTable = null;
+//    try {
+//       metaTable = new HTable(conf, metaTableName);
+//      List<Delete> deletes = new ArrayList<Delete>();
+//      byte[] rk = Bytes.toBytes(pID + "_register_time");
+//      Delete del = new Delete(rk);
+//      deletes.add(del);
+//
+//      rk = Bytes.toBytes(pID + "_nation");
+//      del = new Delete((rk));
+//      deletes.add(del);
+//
+//      rk = Bytes.toBytes(pID + "_language");
+//      del = new Delete(rk);
+//      deletes.add(del);
+//
+//      metaTable.delete(deletes);
+//
+//      HBaseAdmin admin = new HBaseAdmin(conf);
+//      admin.majorCompact(metaTableName);
+//
+//      //Drop test tables
+//      admin.disableTable(indexTableName);
+//      admin.deleteTable(indexTableName);
+//
+//      admin.disableTable(propTableName);
+//      admin.deleteTable(propTableName);
+//      LOG.info("Cleanup finish.");
+//
+//    } catch (IOException e) {
+//      e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+//    } catch (InterruptedException e) {
+//      e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+//    } finally {
+//      if (metaTable != null) {
+//        try {
+//          metaTable.close();
+//        } catch (IOException e) {
+//          e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+//        }
+//      }
+//    }
+//
+//  }
 
   @Test
   public void testReBuild() {
-    init();
-
     List<String> pids = new ArrayList<String>();
     pids.add(pID);
     IndexRebuilder ir = new IndexRebuilder(pids, dateStr);
@@ -282,7 +280,6 @@ public class TestIndexREbuilder extends TestCase {
       }
     }
 
-    cleanup();
   }
 
 //  @Test

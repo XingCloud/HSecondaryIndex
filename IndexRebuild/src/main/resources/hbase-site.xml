@@ -14,7 +14,7 @@
     </property>
 	<property skipInDoc="true">
 		<name>hbase.defaults.for.version</name>
-		<value>0.94.6</value>
+		<value>0.95.1</value>
 	</property>
 	<property>
     	<name>hbase.client.ipc.pool.type</name>

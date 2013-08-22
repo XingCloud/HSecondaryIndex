@@ -73,7 +73,7 @@ public class TestIndexREbuilder {
       List<Put> puts = new ArrayList<Put>();
       for (UserProp up : ups) {
         String name = up.getPropName();
-        short id = (short)up.getId();
+        int id = up.getId();
         byte[] rk = Bytes.toBytes(pID+"_"+name);
         Put put = new Put(rk);
         put.add(FAMILY, Bytes.toBytes("func"), Bytes.toBytes(up.getPropFunc().name()));
@@ -96,7 +96,6 @@ public class TestIndexREbuilder {
         }
       }
     }
-
     //Init tables
     try {
       HBaseAdmin admin = new HBaseAdmin(conf);

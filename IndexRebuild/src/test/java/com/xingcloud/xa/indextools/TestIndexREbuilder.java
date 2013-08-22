@@ -33,9 +33,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class TestIndexREbuilder {
   private static final Log LOG = LogFactory.getLog(TestIndexREbuilder.class);
@@ -43,6 +41,7 @@ public class TestIndexREbuilder {
   private final static String pID = "rebuild-test";
   private final static byte[] FAMILY = Bytes.toBytes("val");
   private final static byte[] date = Bytes.toBytes(19800101);
+  private final static byte[] nextDate = Bytes.toBytes(19800102);
   private final static String dateStr = "1980-01-01";
   private static Configuration conf = HBaseConfiguration.create();
   private static String indexTableName = "p_" + pID + "_i";
@@ -247,23 +246,23 @@ public class TestIndexREbuilder {
       scan.setMaxVersions();
       scan.setBatch(1000);
 
-      ResultScanner scanner = indexTable.getScanner(scan);
-      for (Result r : scanner) {
-        KeyValue[] kvs = r.raw();
-        for (KeyValue kv : kvs) {
-          byte[] row = kv.getRow();
-          int date = Bytes.toInt(Arrays.copyOfRange(row, 0, 4));
-          short id = Bytes.toShort(Arrays.copyOfRange(row, 4, 6));
-          byte[] qualifier = kv.getQualifier();
-
-          if (id==0) {
-            long dateTime = Bytes.toLong(kv.getValue());
-            LOG.info(date + " " + id + " " + dateTime + " " + getUidOfLong(qualifier));
-          } else if (id==1 || id==2) {
-            String valStr = Bytes.toString(kv.getValue());
-            LOG.info(date + " " + id + " " + valStr + " " + getUidOfLong(qualifier));
+      short[] ids = {0,1,2};
+      for (int i=0; i<ids.length; i++) {
+        Set<Long> uidSet = new HashSet<Long>();
+        byte[] srk = bytesCombine(Bytes.toBytes(ids[i]), date);
+        byte[] erk = bytesCombine(Bytes.toBytes(ids[i]), nextDate);
+        scan.setStartRow(srk);
+        scan.setStopRow(erk);
+        ResultScanner scanner = indexTable.getScanner(scan);
+        for (Result r : scanner) {
+          KeyValue[] kvs = r.raw();
+          for (KeyValue kv : kvs) {
+            byte[] uid = kv.getQualifier();
+            byte[] three_bytes = new byte[3];
+            uidSet.add(Bytes.toLong(bytesCombine(three_bytes, uid)));
           }
         }
+        assertEquals(UID_NUM, uidSet.size());
       }
 
     } catch (IOException e) {

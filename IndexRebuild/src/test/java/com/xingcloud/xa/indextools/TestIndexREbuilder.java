@@ -236,6 +236,8 @@ public class TestIndexREbuilder extends TestCase {
 
   @Test
   public void testReBuild() {
+    init();
+
     List<String> pids = new ArrayList<String>();
     pids.add(pID);
     IndexRebuilder ir = new IndexRebuilder(pids, dateStr);
@@ -279,25 +281,27 @@ public class TestIndexREbuilder extends TestCase {
         }
       }
     }
+
+    cleanup();
   }
 
-  @Test
-  public void testCleanup() {
-    List<String> pids = new ArrayList<String>();
-    pids.add(pID);
-    IndexRebuilder ir = new IndexRebuilder(pids, dateStr);
-    ir.runCleanup();
-  }
-
-  @Test
-  public void testAll() {
-    List<String> pids = new ArrayList<String>();
-    pids.add(pID);
-    IndexRebuilder ir = new IndexRebuilder(pids, dateStr);
-    ir.runCleanup();
-    ir.runRebuildIndex();
-
-  }
+//  @Test
+//  public void testCleanup() {
+//    List<String> pids = new ArrayList<String>();
+//    pids.add(pID);
+//    IndexRebuilder ir = new IndexRebuilder(pids, dateStr);
+//    ir.runCleanup();
+//  }
+//
+//  @Test
+//  public void testAll() {
+//    List<String> pids = new ArrayList<String>();
+//    pids.add(pID);
+//    IndexRebuilder ir = new IndexRebuilder(pids, dateStr);
+//    ir.runCleanup();
+//    ir.runRebuildIndex();
+//
+//  }
 
   public static byte[] bytesCombine(byte[]... bytesArrays){
     int length = 0;

@@ -39,7 +39,7 @@ import java.util.List;
 public class TestIndexREbuilder extends TestCase {
   private static final Log LOG = LogFactory.getLog(TestIndexREbuilder.class);
 
-  private final static String pID = "rebuild_test";
+  private final static String pID = "rebuild-test";
   private final static byte[] FAMILY = Bytes.toBytes("FAMILY");
   private final static byte[] date = Bytes.toBytes(19800101);
   private final static String dateStr = "1980-01-01";
@@ -107,7 +107,7 @@ public class TestIndexREbuilder extends TestCase {
       }
       if (admin.tableExists(propTableName)) {
         admin.disableTable(propTableName);
-        admin.disableTable(propTableName);
+        admin.deleteTable(propTableName);
       }
 
       //Create user property table

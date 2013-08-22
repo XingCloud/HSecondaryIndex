@@ -13,7 +13,8 @@
 		<module>IndexWriter</module>
 		<module>IndexPorter</module>
 		<module>IndexImport</module>
-	</modules>
+        <module>IndexRebuild</module>
+    </modules>
 
     <repositories>
         <repository>

@@ -122,7 +122,7 @@ public class HPutTask implements Runnable  {
               } else {
                   mutation = new Put(row);
                   ((Put)mutation).add(Constants.COLUMN_FAMILY.getBytes(),
-                          WriteUtils.getFiveBytes(startIndex.getUid()), Bytes.toBytes('0'));
+                          WriteUtils.getFiveBytes(startIndex.getUid()), Constants.ZERO);
               }
 
               mutation.setDurability(Durability.SKIP_WAL);

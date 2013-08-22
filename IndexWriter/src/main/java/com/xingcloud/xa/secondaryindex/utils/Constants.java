@@ -22,4 +22,6 @@ public class Constants {
     public static final String OPERATION_DELETE = "delete";
 
     public static final String SECONDARY_INDEX_LOG_DIR = "/data0/log/secondaryindex";
+
+    public static final byte[] ZERO = {0};
 }

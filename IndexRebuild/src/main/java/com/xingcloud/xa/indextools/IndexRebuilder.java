@@ -114,6 +114,10 @@ public class IndexRebuilder {
   }
 
   public static String getPropTableName(String pID) {
+    if (pID.equals("rebuild-test")) {
+      return "p_" + pID;
+    }
+
     return PROPERTIES + pID;
   }
 

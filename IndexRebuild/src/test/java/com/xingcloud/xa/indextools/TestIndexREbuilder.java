@@ -140,8 +140,7 @@ public class TestIndexREbuilder {
       String currentChar = "a";
       List<Put> puts = new ArrayList<Put>();
       for (long i=0; i<UID_NUM; i++) {
-        byte[] five = Arrays.copyOfRange(Bytes.toBytes(i), 3, 8);
-        byte[] rk = bytesCombine(date, five);
+        byte[] rk = Arrays.copyOfRange(Bytes.toBytes(i), 3, 8);
         for (UserProp up : ups) {
           short id = (short)up.getId();
           byte[] val = null;

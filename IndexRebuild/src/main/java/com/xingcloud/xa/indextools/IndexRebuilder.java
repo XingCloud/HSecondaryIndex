@@ -218,8 +218,6 @@ public class IndexRebuilder {
         List<Put> puts = new ArrayList<Put>();
 
         Scan scan = new Scan();
-        scan.setStartRow(startDate);
-        scan.setStopRow(endDate);
         scan.setBatch(BATCH_SIZE);
         scan.setCacheBlocks(false);
 
@@ -228,12 +226,11 @@ public class IndexRebuilder {
         for (Result r : rs) {
           KeyValue[] kvs = r.raw();
           for (KeyValue kv : kvs) {
-            byte[] row = kv.getRow();
+            byte[] uid = kv.getRow();
             byte[] qualifier = kv.getQualifier();
             byte[] val = kv.getValue();
 
             byte[] indexRK = bytesCombine(qualifier, startDate, val);
-            byte[] uid = Arrays.copyOfRange(row, 4, row.length);
 
             Put put = new Put(indexRK);
             put.add(COLUMN_FAMILY, uid, ZERO);

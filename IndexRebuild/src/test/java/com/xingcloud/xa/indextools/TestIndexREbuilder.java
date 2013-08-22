@@ -48,7 +48,7 @@ public class TestIndexREbuilder {
   private static String indexTableName = "p_" + pID + "_i";
   private static String propTableName = "p_" + pID;
   private static String metaTableName = "meta_properties";
-  private static int UID_NUM = 1;
+  private static int UID_NUM = 10;
 
   @BeforeClass
   public static void setUpBeforeClass() throws Exception {
@@ -61,8 +61,8 @@ public class TestIndexREbuilder {
             "na", "TOTAL_USER");
     ups.add(up1);
 
-    UserProp up2 = new UserProp(2, "language", PropType.sql_string, UpdateFunc.cover, PropOrig.sys,
-            "lan", "TOTAL_USER");
+    UserProp up2 = new UserProp(2, "pay_amount", PropType.sql_bigint, UpdateFunc.inc, PropOrig.sys,
+            "pa", "TOTAL_USER");
     ups.add(up2);
 
     //Init meta table

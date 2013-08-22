@@ -14,6 +14,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.xingcloud.userprops_meta_util.*;
+import junit.framework.TestCase;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -35,7 +36,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class TestIndexREbuilder {
+public class TestIndexREbuilder extends TestCase {
   private static final Log LOG = LogFactory.getLog(TestIndexREbuilder.class);
 
   private final static String pID = "rebuild_test";

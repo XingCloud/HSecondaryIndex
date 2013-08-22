@@ -44,8 +44,8 @@ public class TestIndexREbuilder extends TestCase {
   private final static byte[] date = Bytes.toBytes(19800101);
   private final static String dateStr = "1980-01-01";
   private static Configuration conf = HBaseConfiguration.create();
-  private static String indexTableName = "properties_" + pID + "_index";
-  private static String propTableName = "properties_" + pID;
+  private static String indexTableName = "p_" + pID + "_i";
+  private static String propTableName = "p_" + pID;
   private static String metaTableName = "meta_properties";
   private static int UID_NUM = 10;
 

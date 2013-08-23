@@ -177,7 +177,7 @@ public class SecondaryIndexCoprocessor extends BaseRegionObserver {
             LOG.info("Scan property table finished. Property number: " +  props.size() + "Taken: " + (System.nanoTime()-st)/1.0e9 + " sec");
             metaMap = new HashMap<Short, UpdateFunc>();
             for (UserProp up : props) {
-                metaMap.put((short)up.getId(), up.getPropFunc());
+                metaMap.put(up.getId(), up.getPropFunc());
             }
             metaInfo.put(projectID, metaMap);
         }

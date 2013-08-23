@@ -52,15 +52,15 @@ public class TestIndexREbuilder {
   @BeforeClass
   public static void setUpBeforeClass() throws Exception {
     List<UserProp> ups = new ArrayList<UserProp>();
-    UserProp up0 = new UserProp(0, "register_time", PropType.sql_datetime, UpdateFunc.once, PropOrig.sys,
+    UserProp up0 = new UserProp((short)0, "register_time", PropType.sql_datetime, UpdateFunc.once, PropOrig.sys,
             "rt", "TOTAL_USER");
     ups.add(up0);
 
-    UserProp up1 = new UserProp(1, "nation", PropType.sql_string, UpdateFunc.cover, PropOrig.sys,
+    UserProp up1 = new UserProp((short)1, "nation", PropType.sql_string, UpdateFunc.cover, PropOrig.sys,
             "na", "TOTAL_USER");
     ups.add(up1);
 
-    UserProp up2 = new UserProp(2, "pay_amount", PropType.sql_bigint, UpdateFunc.inc, PropOrig.sys,
+    UserProp up2 = new UserProp((short)2, "pay_amount", PropType.sql_bigint, UpdateFunc.inc, PropOrig.sys,
             "pa", "TOTAL_USER");
     ups.add(up2);
 
@@ -142,7 +142,7 @@ public class TestIndexREbuilder {
       for (long i=0; i<UID_NUM; i++) {
         byte[] rk = Arrays.copyOfRange(Bytes.toBytes(i), 3, 8);
         for (UserProp up : ups) {
-          short id = (short)up.getId();
+          short id = up.getId();
           byte[] val = null;
           PropType type = up.getPropType();
           switch (type) {
